@@ -128,6 +128,9 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
   const [isLeaving, setIsLeaving] = useState(false);
   const [leaveButtonLocked, setLeaveButtonLocked] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [charlestonTopChromeSlot, setCharlestonTopChromeSlot] = useState<HTMLDivElement | null>(
+    null
+  );
   const [rightRailHintSlot, setRightRailHintSlot] = useState<HTMLDivElement | null>(null);
   const [hintNeedsExtraVerticalSpace, setHintNeedsExtraVerticalSpace] = useState(false);
   const [isHistoricalView, setIsHistoricalView] = useState(false);
@@ -343,13 +346,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         />
       )}
 
-      {/* Wall Counter */}
-      <WallCounter
-        remainingTiles={gameState.wall_tiles_remaining}
-        totalTiles={totalTiles}
-        isDeadWall={false}
-      />
-
       <LeaveConfirmationDialog
         isOpen={showLeaveDialog}
         isLoading={isLeaving}
@@ -374,47 +370,61 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           data-testid="board-layout-shell"
         >
           <div
-            className="pointer-events-none absolute left-0 right-auto top-0 z-40 w-full -translate-y-12 lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))]"
-            data-testid="board-controls-row"
-          >
-            <div className="pointer-events-auto flex flex-wrap items-center justify-end gap-2">
-              <div
-                className="flex flex-wrap items-center justify-end gap-2"
-                data-testid="board-controls-strip"
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-red-500/70 bg-background/80 text-red-700 backdrop-blur-sm hover:bg-red-50 dark:text-red-200 dark:hover:bg-red-950/60"
-                  data-testid="leave-game-button"
-                  aria-label="Leave game (marks you disconnected)"
-                  onClick={handleOpenLeaveDialog}
-                  disabled={interactionsDisabled || isLeaving || isLoggingOut}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Leave Game
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="border-border/70 bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent"
-                  data-testid="logout-button"
-                  aria-label="Log out"
-                  onClick={() => {
-                    void handleLogOut();
-                  }}
-                  disabled={interactionsDisabled || isLeaving || isLoggingOut}
-                >
-                  <LogOut className="h-4 w-4" />
-                  {isLoggingOut ? 'Logging Out...' : 'Log Out'}
-                </Button>
-              </div>
-            </div>
-          </div>
-          <div
             className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))] lg:flex-none lg:aspect-square"
             data-testid="square-board-container"
           >
+            <div
+              className="pointer-events-none absolute inset-x-0 top-0 z-20 flex flex-col gap-2 px-3 pt-3 lg:px-4 lg:pt-4"
+              data-testid="top-chrome-stack"
+            >
+              <div
+                className="pointer-events-none flex justify-end"
+                data-testid="board-controls-row"
+              >
+                <div
+                  className="pointer-events-auto flex flex-wrap items-center justify-end gap-2"
+                  data-testid="board-controls-strip"
+                >
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-red-500/70 bg-background/80 text-red-700 backdrop-blur-sm hover:bg-red-50 dark:text-red-200 dark:hover:bg-red-950/60"
+                    data-testid="leave-game-button"
+                    aria-label="Leave game (marks you disconnected)"
+                    onClick={handleOpenLeaveDialog}
+                    disabled={interactionsDisabled || isLeaving || isLoggingOut}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Leave Game
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="border-border/70 bg-background/80 text-foreground backdrop-blur-sm hover:bg-accent"
+                    data-testid="logout-button"
+                    aria-label="Log out"
+                    onClick={() => {
+                      void handleLogOut();
+                    }}
+                    disabled={interactionsDisabled || isLeaving || isLoggingOut}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {isLoggingOut ? 'Logging Out...' : 'Log Out'}
+                  </Button>
+                </div>
+              </div>
+              <div
+                className="pointer-events-none flex flex-col gap-2"
+                data-testid="top-chrome-status-stack"
+              >
+                <div ref={setCharlestonTopChromeSlot} data-testid="charleston-top-chrome-slot" />
+                <WallCounter
+                  remainingTiles={gameState.wall_tiles_remaining}
+                  totalTiles={totalTiles}
+                  isDeadWall={false}
+                />
+              </div>
+            </div>
             <ErrorBoundary resetKeys={[isSetupPhase, isPlaying, isCharleston]}>
               {/* Setup Phase */}
               {isSetupPhase && setupStage && (
@@ -451,6 +461,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
                   stage={charlestonStage}
                   sendCommand={sendCommand}
                   isHistoricalView={isHistoricalView}
+                  topChromeSlot={charlestonTopChromeSlot}
                 />
               )}
             </ErrorBoundary>

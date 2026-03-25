@@ -54,14 +54,13 @@ export const WallCounter: FC<WallCounterProps> = ({
 
   return (
     <div
-      className="fixed top-[60px] left-4 z-10 text-white px-4 py-1.5 rounded-b-lg shadow-md"
+      className="w-fit rounded-2xl border border-emerald-500/25 px-4 py-1.5 text-white shadow-md"
       style={{
         background: 'linear-gradient(to right, rgba(12,35,18,0.92), rgba(18,52,28,0.92))',
-        borderBottom: '1px solid rgba(80,160,100,0.25)',
-        borderLeft: '1px solid rgba(80,160,100,0.25)',
-        borderRight: '1px solid rgba(80,160,100,0.25)',
+        borderColor: 'rgba(80,160,100,0.25)',
       }}
       data-testid="wall-counter"
+      data-chrome-layer="z-20"
       role="status"
       aria-live="polite"
       aria-label={`${remainingTiles} tiles remaining out of ${totalTiles}${isDeadWall ? ', drawing from dead wall' : ''}${isLow ? ', wall is low' : ''}`}

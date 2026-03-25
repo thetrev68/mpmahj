@@ -138,6 +138,7 @@ vi.mock('../ActionBar', () => ({
     votedPlayers,
     canDeclareMahjong,
     onDeclareMahjong,
+    selectionSummary,
   }: {
     phase: unknown;
     disabled?: boolean;
@@ -146,6 +147,7 @@ vi.mock('../ActionBar', () => ({
     votedPlayers?: string[];
     canDeclareMahjong?: boolean;
     onDeclareMahjong?: () => void;
+    selectionSummary?: { selectedCount: number; maxSelection: number; blindPassCount?: number };
   }) => (
     <div
       data-testid="action-bar"
@@ -156,6 +158,13 @@ vi.mock('../ActionBar', () => ({
       data-can-declare-mahjong={canDeclareMahjong ? 'true' : 'false'}
     >
       Phase: {JSON.stringify(phase)}
+      {selectionSummary ? (
+        <div data-testid="selection-counter">
+          {selectionSummary.blindPassCount && selectionSummary.blindPassCount > 0
+            ? `${selectionSummary.selectedCount} hand + ${selectionSummary.blindPassCount} blind = ${selectionSummary.selectedCount + selectionSummary.blindPassCount} total`
+            : `${selectionSummary.selectedCount}/${selectionSummary.maxSelection} selected`}
+        </div>
+      ) : null}
       <button
         type="button"
         data-testid="mock-action-bar-declare-mahjong"
@@ -455,6 +464,23 @@ describe('CharlestonPhase', () => {
       );
     });
 
+    test('keeps the selection counter inside the action region rather than the rack region', () => {
+      render(
+        <CharlestonPhase
+          gameState={mockGameState}
+          stage="FirstRight"
+          sendCommand={sendCommandMock}
+        />
+      );
+
+      expect(screen.getByTestId('player-zone-actions')).toContainElement(
+        screen.getByTestId('selection-counter')
+      );
+      expect(screen.queryByTestId('player-zone-rack')).not.toContainElement(
+        screen.queryByTestId('selection-counter')
+      );
+    });
+
     test('renders the shared Charleston board-region grid', () => {
       render(
         <CharlestonPhase
@@ -466,8 +492,8 @@ describe('CharlestonPhase', () => {
 
       expect(screen.getByTestId('charleston-board-regions')).toHaveClass(
         'grid',
-        'grid-cols-[auto_minmax(0,1fr)_auto]',
-        'grid-rows-[auto_minmax(0,1fr)_auto]'
+        'grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)_minmax(5.5rem,auto)]',
+        'grid-rows-[minmax(6.5rem,auto)_minmax(0,1fr)_auto]'
       );
       expect(screen.getByTestId('player-zone-region')).toHaveClass('col-span-3', 'row-start-3');
     });

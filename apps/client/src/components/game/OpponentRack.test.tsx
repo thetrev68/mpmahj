@@ -40,6 +40,10 @@ describe('OpponentRack', () => {
     test('preserves the outer opponent rack test id', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
       expect(screen.getByTestId('opponent-rack-east')).toBeInTheDocument();
+      expect(screen.getByTestId('opponent-rack-east')).toHaveAttribute(
+        'data-board-region',
+        'opponent-rack-left'
+      );
     });
 
     test('applies active ring classes when isActive=true', () => {

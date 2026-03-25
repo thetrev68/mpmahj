@@ -141,6 +141,7 @@ export const OpponentRack: FC<OpponentRackProps> = ({
         className
       )}
       data-testid={`opponent-rack-${seatKey}`}
+      data-board-region={`opponent-rack-${position}`}
       aria-label={`${displayName}'s hand: ${concealed} concealed tiles`}
     >
       <div className={rackAndStagingClass}>

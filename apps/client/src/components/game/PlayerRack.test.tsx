@@ -166,12 +166,16 @@ describe('PlayerRack Component', () => {
       expect(onJokerTileClick).toHaveBeenCalledWith(0, 3);
     });
 
-    test('keeps a max-width rack viewport instead of a raw fixed-width outer wrapper', () => {
+    test('keeps the rack inside a board-local containment viewport instead of a fixed outer width', () => {
       renderWithProviders(
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
-      expect(screen.getByTestId('player-rack-viewport')).toHaveClass('w-full', 'max-w-[1038px]');
+      expect(screen.getByTestId('player-rack-viewport')).toHaveClass('w-full', 'max-w-full');
+      expect(screen.getByTestId('player-rack-viewport')).toHaveAttribute(
+        'data-board-region',
+        'player-rack-containment'
+      );
       expect(screen.getByTestId('player-rack-scale-shell')).toHaveAttribute(
         'data-rack-scale',
         'full-size'
@@ -251,7 +255,7 @@ describe('PlayerRack Component', () => {
       expect(rackShellStyle).toContain('rgb(139, 94, 60)');
     });
 
-    test('shows selection counter in charleston mode', () => {
+    test('shows selection counter in charleston mode when the rack owns it', () => {
       renderWithProviders(
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
@@ -437,6 +441,19 @@ describe('PlayerRack Component', () => {
     test('does not show selection counter in view-only mode', () => {
       renderWithProviders(
         <PlayerRack tiles={charlestonHandInstances} mode="view-only" onTileSelect={vi.fn()} />
+      );
+
+      expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();
+    });
+
+    test('does not show selection counter when ownership moves to the action region', () => {
+      renderWithProviders(
+        <PlayerRack
+          tiles={charlestonHandInstances}
+          mode="charleston"
+          showSelectionCounter={false}
+          onTileSelect={vi.fn()}
+        />
       );
 
       expect(screen.queryByTestId('selection-counter')).not.toBeInTheDocument();

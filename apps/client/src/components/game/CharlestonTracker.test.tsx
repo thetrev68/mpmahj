@@ -28,13 +28,14 @@ describe('CharlestonTracker Component', () => {
       expect(tracker).toHaveAttribute('aria-label', 'Charleston: Pass Right');
     });
 
-    test('T-2: removes legacy pill positioning and rounded styling', () => {
+    test('T-2: removes legacy fixed banner positioning and participates in shared chrome stacking', () => {
       renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
 
       const tracker = screen.getByTestId('charleston-tracker');
 
-      expect(tracker).not.toHaveClass('rounded-lg');
-      expect(tracker).not.toHaveClass('left-1/2');
+      expect(tracker).toHaveClass('rounded-2xl');
+      expect(tracker).not.toHaveClass('fixed');
+      expect(tracker).toHaveAttribute('data-chrome-layer', 'z-20');
     });
 
     test('T-3: applies the banner gradient and bottom border styles', () => {
@@ -46,15 +47,12 @@ describe('CharlestonTracker Component', () => {
       expect(tracker.getAttribute('style')).toContain('rgba(80, 160, 100');
     });
 
-    test('retains the required banner layout classes', () => {
+    test('retains the required shared chrome layout classes', () => {
       renderWithProviders(<CharlestonTracker stage="FirstRight" readyPlayers={[]} />);
 
       const tracker = screen.getByTestId('charleston-tracker');
 
-      expect(tracker).toHaveClass('flex');
-      expect(tracker).toHaveClass('items-center');
-      expect(tracker).toHaveClass('gap-4');
-      expect(tracker).toHaveClass('px-6');
+      expect(tracker).toHaveClass('px-4');
       expect(tracker).toHaveClass('py-2');
     });
 

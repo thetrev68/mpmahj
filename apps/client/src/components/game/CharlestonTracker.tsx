@@ -88,82 +88,88 @@ export const CharlestonTracker: FC<CharlestonTrackerProps> = ({
 
   return (
     <div
-      className="fixed top-0 left-0 right-0 z-20 text-white px-6 py-2 flex items-center gap-4"
+      className="rounded-2xl border border-emerald-500/25 px-4 py-2 text-white shadow-md"
       style={{
         background: 'linear-gradient(to right, rgba(12,35,18,0.97), rgba(18,52,28,0.97))',
-        borderBottom: '1px solid rgba(80,160,100,0.3)',
+        borderColor: 'rgba(80,160,100,0.3)',
       }}
       data-testid="charleston-tracker"
+      data-chrome-layer="z-20"
       role="status"
       aria-label={`Charleston: ${label}`}
     >
-      {/* Primary: Direction + progress */}
-      <div className="flex items-center gap-2">
-        <span className="text-lg font-bold" data-testid="charleston-arrow">
-          {arrow}
-        </span>
-        <span className="text-base font-semibold tracking-wide" data-testid="charleston-direction">
-          {label}
-          {blindPass && <span className="text-emerald-300 text-sm font-normal"> (Blind)</span>}
-        </span>
-        {progressText && (
-          <span
-            className="text-xs font-semibold text-yellow-300 bg-yellow-900/40 rounded px-2 py-0.5"
-            data-testid="charleston-progress"
-          >
-            {progressText}
+      <div className="flex items-center gap-4">
+        {/* Primary: Direction + progress */}
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-bold" data-testid="charleston-arrow">
+            {arrow}
           </span>
+          <span
+            className="text-base font-semibold tracking-wide"
+            data-testid="charleston-direction"
+          >
+            {label}
+            {blindPass && <span className="text-emerald-300 text-sm font-normal"> (Blind)</span>}
+          </span>
+          {progressText && (
+            <span
+              className="text-xs font-semibold text-yellow-300 bg-yellow-900/40 rounded px-2 py-0.5"
+              data-testid="charleston-progress"
+            >
+              {progressText}
+            </span>
+          )}
+        </div>
+
+        <div className="flex-1" />
+
+        {/* Secondary: Timer */}
+        {timer && (
+          <CharlestonTimer
+            remainingSeconds={timer.remainingSeconds}
+            durationSeconds={timer.durationSeconds}
+            mode={timer.mode}
+          />
+        )}
+
+        {/* Tertiary: Per-seat readiness */}
+        <div
+          className="flex items-center gap-1.5 text-[11px] text-gray-400"
+          data-testid="ready-indicators"
+        >
+          {seatOrder.map((seat) => {
+            const isReady = readySet.has(seat);
+            return (
+              <span
+                key={seat}
+                className={cn('flex items-center gap-0.5', isReady && 'text-emerald-400')}
+                data-testid={`ready-indicator-${seat.toLowerCase()}`}
+                aria-label={`${seat} ${isReady ? 'ready' : 'waiting'}`}
+              >
+                <span>{seat[0]}</span>
+                <span>{isReady ? '\u2713' : '\u2022'}</span>
+              </span>
+            );
+          })}
+        </div>
+
+        {/* Waiting message */}
+        {waitingMessage && (
+          <div className="text-sm text-emerald-200 italic" aria-live="polite">
+            {waitingMessage}
+          </div>
+        )}
+
+        {statusMessage && (
+          <div
+            className="text-sm text-emerald-200 italic"
+            data-testid="charleston-status-message"
+            aria-live="polite"
+          >
+            {statusMessage}
+          </div>
         )}
       </div>
-
-      <div className="flex-1" />
-
-      {/* Secondary: Timer */}
-      {timer && (
-        <CharlestonTimer
-          remainingSeconds={timer.remainingSeconds}
-          durationSeconds={timer.durationSeconds}
-          mode={timer.mode}
-        />
-      )}
-
-      {/* Tertiary: Per-seat readiness */}
-      <div
-        className="flex items-center gap-1.5 text-[11px] text-gray-400"
-        data-testid="ready-indicators"
-      >
-        {seatOrder.map((seat) => {
-          const isReady = readySet.has(seat);
-          return (
-            <span
-              key={seat}
-              className={cn('flex items-center gap-0.5', isReady && 'text-emerald-400')}
-              data-testid={`ready-indicator-${seat.toLowerCase()}`}
-              aria-label={`${seat} ${isReady ? 'ready' : 'waiting'}`}
-            >
-              <span>{seat[0]}</span>
-              <span>{isReady ? '\u2713' : '\u2022'}</span>
-            </span>
-          );
-        })}
-      </div>
-
-      {/* Waiting message */}
-      {waitingMessage && (
-        <div className="text-sm text-emerald-200 italic" aria-live="polite">
-          {waitingMessage}
-        </div>
-      )}
-
-      {statusMessage && (
-        <div
-          className="text-sm text-emerald-200 italic"
-          data-testid="charleston-status-message"
-          aria-live="polite"
-        >
-          {statusMessage}
-        </div>
-      )}
     </div>
   );
 };

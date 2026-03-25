@@ -54,11 +54,27 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
   const showMotion = isEnabled();
 
   // Position badges around the board
-  const positions: Record<Seat, string> = {
-    East: 'right-[4%] top-1/2 -translate-y-1/2',
-    South: 'bottom-[18%] left-1/2 -translate-x-1/2',
-    West: 'left-[4%] top-1/2 -translate-y-1/2',
-    North: 'top-[12%] left-1/2 -translate-x-1/2',
+  const positions: Record<Seat, { className: string; anchor: string; deadHandOffset?: string }> = {
+    East: {
+      className: 'right-3 top-1/2 -translate-y-1/2',
+      anchor: 'east-edge',
+      deadHandOffset: 'mt-10',
+    },
+    South: {
+      className: 'bottom-28 left-1/2 -translate-x-1/2',
+      anchor: 'south-player-zone',
+      deadHandOffset: '-mt-10',
+    },
+    West: {
+      className: 'left-3 top-1/2 -translate-y-1/2',
+      anchor: 'west-edge',
+      deadHandOffset: 'mt-10',
+    },
+    North: {
+      className: 'top-4 left-1/2 -translate-x-1/2',
+      anchor: 'north-edge',
+      deadHandOffset: 'mt-10',
+    },
   };
 
   return (
@@ -75,8 +91,9 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
         return (
           <div
             key={seat}
-            className={cn('absolute', positions[seat])}
+            className={cn('absolute', positions[seat].className)}
             data-testid={`turn-indicator-${seat.toLowerCase()}`}
+            data-anchor={positions[seat].anchor}
             role="status"
             aria-live="polite"
             aria-label={`${seat}'s turn${stageName ? ` - ${stageName}` : ''}`}
@@ -109,8 +126,9 @@ export const TurnIndicator: FC<TurnIndicatorProps> = ({
       {deadHandSeats.map((seat) => (
         <div
           key={`dead-${seat}`}
-          className={cn('absolute', positions[seat], 'mt-10')}
+          className={cn('absolute', positions[seat].className, positions[seat].deadHandOffset)}
           data-testid={`dead-hand-badge-${seat.toLowerCase()}`}
+          data-anchor={positions[seat].anchor}
           role="status"
           aria-label={`${seat} has a dead hand`}
         >

@@ -294,8 +294,9 @@ export const StagingStrip: FC<StagingStripProps> = ({
 
   return (
     <section
-      className="relative z-20 flex w-full flex-col gap-4 overflow-visible rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm"
+      className="relative z-10 flex w-full flex-col items-start gap-4 overflow-visible rounded-2xl border border-white/10 bg-black/30 p-4 backdrop-blur-sm"
       data-testid="staging-strip"
+      data-board-region="staging-strip"
       aria-label="Tile staging strip"
       style={{
         ...stripStyles,
@@ -308,7 +309,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
         ref={slotViewportRef}
       >
         <div
-          className="mx-auto origin-top"
+          className="origin-top-left"
           data-testid="staging-slot-row"
           style={{
             display: 'grid',
@@ -316,7 +317,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
             gridTemplateColumns: `repeat(${slotCount}, minmax(0, var(--staging-slot-width)))`,
             height: `${slotViewportHeight}px`,
             transform: `scale(${slotRowScale})`,
-            transformOrigin: 'top center',
+            transformOrigin: 'top left',
             width: slotContentWidth,
           }}
         >

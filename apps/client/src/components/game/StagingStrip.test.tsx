@@ -27,7 +27,17 @@ describe('StagingStrip', () => {
 
     const strip = screen.getByTestId('staging-strip');
     expect(strip).toHaveClass('relative');
+    expect(strip).toHaveClass('items-start');
+    expect(strip).toHaveAttribute('data-board-region', 'staging-strip');
     expect(strip).not.toHaveClass('fixed');
+  });
+
+  test('anchors the slot row to the left-origin instead of recentering by slot count', () => {
+    renderWithProviders(<StagingStrip {...defaultProps} />);
+
+    const row = screen.getByTestId('staging-slot-row');
+    expect(row).toHaveClass('origin-top-left');
+    expect(row.style.transformOrigin).toBe('top left');
   });
 
   test('caps the strip to a computed 6-slot width and removes horizontal scrolling', () => {

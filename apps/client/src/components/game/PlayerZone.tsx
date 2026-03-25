@@ -16,28 +16,33 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
   actions,
   'data-testid': testId = 'player-zone',
 }) => (
-  <div className="relative z-20 w-full min-h-60" data-testid={testId}>
+  <div
+    className="relative z-10 w-full min-h-60 rounded-[1.75rem] border border-white/10 bg-black/35 px-3 py-3 backdrop-blur-sm"
+    data-testid={testId}
+    data-board-region="south-interaction-region"
+  >
     <div
-      className="mx-auto grid w-full max-w-full gap-1.5 lg:grid-cols-[minmax(0,1fr)_280px]"
+      className="mx-auto grid w-full max-w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]"
       data-testid="player-zone-layout"
     >
-      {/* Row 1: staging and actions side-by-side in the same plane */}
       <div
-        className="flex min-w-0 items-start justify-center"
+        className="flex min-w-0 items-start justify-start"
         data-testid="player-zone-staging-slot"
+        data-board-region="staging-region"
       >
         {staging}
       </div>
       <div
-        className="flex min-w-0 flex-col items-stretch justify-center self-stretch py-2"
+        className="flex min-w-0 flex-col items-stretch justify-start self-stretch"
         data-testid="player-zone-actions-slot"
+        data-board-region="action-region"
       >
         {actions}
       </div>
-      {/* Row 2: rack spans the full width */}
       <div
         className="flex w-full items-center justify-center lg:col-span-2"
         data-testid="player-zone-rack-slot"
+        data-board-region="rack-region"
       >
         {rack}
       </div>

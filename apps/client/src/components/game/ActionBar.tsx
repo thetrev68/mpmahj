@@ -22,6 +22,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   selectedTiles = [],
   isProcessing = false,
   blindPassCount,
+  selectionSummary,
   canCommitCharlestonPass = false,
   hasSubmittedPass = false,
   hasSubmittedVote = false,
@@ -112,10 +113,29 @@ export const ActionBar: FC<ActionBarProps> = ({
         'min-w-[180px]'
       )}
       data-testid="action-bar"
+      data-board-region="action-region-panel"
       role="toolbar"
       aria-label="Game actions"
     >
       <div className="flex min-h-full flex-1 flex-col gap-2.5">
+        {selectionSummary ? (
+          <div
+            className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-white"
+            data-testid="selection-counter"
+            aria-live="polite"
+          >
+            {selectionSummary.blindPassCount != null && selectionSummary.blindPassCount > 0 ? (
+              <div className="flex flex-col gap-1">
+                <span>{`${selectionSummary.selectedCount}/${selectionSummary.maxSelection} selected`}</span>
+                <span className="text-xs text-emerald-200">
+                  {`${selectionSummary.selectedCount} hand + ${selectionSummary.blindPassCount} blind = ${selectionSummary.selectedCount + selectionSummary.blindPassCount} total`}
+                </span>
+              </div>
+            ) : (
+              `${selectionSummary.selectedCount}/${selectionSummary.maxSelection} selected`
+            )}
+          </div>
+        ) : null}
         <ActionBarPhaseActions
           phase={phase}
           mySeat={mySeat}

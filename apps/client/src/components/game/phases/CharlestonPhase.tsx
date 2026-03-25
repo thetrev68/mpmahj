@@ -27,6 +27,7 @@
  */
 
 import { useEffect, useCallback, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CharlestonTracker } from '../CharlestonTracker';
 import { PlayerRack } from '../PlayerRack';
 import { ActionBar } from '../ActionBar';
@@ -65,6 +66,7 @@ interface CharlestonPhaseProps {
   stage: CharlestonStage;
   sendCommand: (cmd: GameCommand) => void;
   isHistoricalView?: boolean;
+  topChromeSlot?: HTMLElement | null;
 }
 
 /**
@@ -78,6 +80,7 @@ export function CharlestonPhase({
   stage,
   sendCommand,
   isHistoricalView = false,
+  topChromeSlot = null,
 }: CharlestonPhaseProps) {
   const dispatch = useGameUIStore((s) => s.dispatch);
 
@@ -413,14 +416,14 @@ export function CharlestonPhase({
 
   const opponentSlotClassByPosition: Record<'top' | 'left' | 'right', string> = {
     top: 'col-start-2 row-start-1 flex justify-center self-start',
-    left: 'col-start-1 row-start-2 flex items-center justify-start self-center',
-    right: 'col-start-3 row-start-2 flex items-center justify-end self-center',
+    left: 'col-start-1 row-start-2 flex items-center justify-start self-stretch',
+    right: 'col-start-3 row-start-2 flex items-center justify-end self-stretch',
   };
 
   return (
     <>
       <div
-        className="pointer-events-none absolute inset-0 grid grid-cols-[auto_minmax(0,1fr)_auto] grid-rows-[auto_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-4 lg:gap-x-4 lg:px-4"
+        className="pointer-events-none absolute inset-0 grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)_minmax(5.5rem,auto)] grid-rows-[minmax(6.5rem,auto)_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-24 lg:gap-x-4 lg:px-4 lg:pt-28"
         data-testid="charleston-board-regions"
       >
         {/* Opponent racks — face-down tiles for each opponent */}
@@ -434,6 +437,7 @@ export function CharlestonPhase({
                 key={`slot-${p.seat}`}
                 className={posClass}
                 data-testid={`opponent-slot-${p.seat.toLowerCase()}`}
+                data-board-region={`opponent-${pos}`}
               >
                 <OpponentRack
                   key={p.seat}
@@ -487,6 +491,7 @@ export function CharlestonPhase({
                 selectedTileIds={selectedIds}
                 onTileSelect={toggleTile}
                 maxSelection={handMaxSelection}
+                showSelectionCounter={false}
                 disabled={isPassUiLocked || storeHasSubmittedVote || isCourtesyWaiting}
                 disabledTileIds={handTileInstances
                   .filter((instance) => instance.tile === TILE_INDICES.JOKER)
@@ -516,6 +521,11 @@ export function CharlestonPhase({
                 disabled={false}
                 readOnly={isHistoricalView}
                 blindPassCount={stagedIncomingTiles.length}
+                selectionSummary={{
+                  selectedCount: selectedIds.length,
+                  maxSelection: handMaxSelection,
+                  blindPassCount: isBlindPassStage ? stagedIncomingTiles.length : 0,
+                }}
                 canCommitCharlestonPass={isVotingStage ? canSubmitVote : canCommitPass}
                 canDeclareMahjong={canDeclareMahjong}
                 onDeclareMahjong={mahjong.handleDeclareMahjong}
@@ -539,26 +549,32 @@ export function CharlestonPhase({
       </div>
 
       {/* Charleston Tracker */}
-      <CharlestonTracker
-        stage={stage}
-        readyPlayers={storeReadyPlayers}
-        waitingMessage={votingWaitingMessage ?? undefined}
-        timer={
-          storeCharlestonTimer && charlestonSecondsRemaining !== null
-            ? {
-                remainingSeconds: charlestonSecondsRemaining,
-                durationSeconds: storeCharlestonTimer.durationSeconds,
-                mode: storeCharlestonTimer.mode,
-              }
-            : null
-        }
-        statusMessage={votingStatusMessage ?? undefined}
-      />
+      {(() => {
+        const tracker = (
+          <CharlestonTracker
+            stage={stage}
+            readyPlayers={storeReadyPlayers}
+            waitingMessage={votingWaitingMessage ?? undefined}
+            timer={
+              storeCharlestonTimer && charlestonSecondsRemaining !== null
+                ? {
+                    remainingSeconds: charlestonSecondsRemaining,
+                    durationSeconds: storeCharlestonTimer.durationSeconds,
+                    mode: storeCharlestonTimer.mode,
+                  }
+                : null
+            }
+            statusMessage={votingStatusMessage ?? undefined}
+          />
+        );
+
+        return topChromeSlot ? createPortal(tracker, topChromeSlot) : tracker;
+      })()}
 
       {/* Error Message */}
       {storeErrorMessage && (
         <div
-          className="absolute left-1/2 top-24 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
+          className="absolute left-1/2 top-32 z-20 -translate-x-1/2 rounded bg-red-900/80 px-4 py-2 text-sm text-red-100"
           role="alert"
           data-testid="charleston-error-message"
         >

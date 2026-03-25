@@ -29,12 +29,23 @@ describe('GameBoard', () => {
 
     render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
 
+    expect(screen.getByTestId('top-chrome-stack')).toHaveClass(
+      'absolute',
+      'inset-x-0',
+      'top-0',
+      'flex',
+      'flex-col'
+    );
     expect(screen.getByTestId('board-controls-row')).toHaveClass(
       'pointer-events-none',
-      '-translate-y-12',
-      'lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))]'
+      'justify-end'
     );
     expect(screen.getByTestId('board-controls-strip')).toBeInTheDocument();
+    expect(screen.getByTestId('board-controls-strip')).toHaveClass(
+      'pointer-events-auto',
+      'flex-wrap',
+      'justify-end'
+    );
     expect(screen.queryByTestId('board-settings-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('start-over-button')).not.toBeInTheDocument();
     expect(screen.getByTestId('leave-game-button')).toBeInTheDocument();
@@ -117,6 +128,16 @@ describe('GameBoard', () => {
       'lg:flex-none'
     );
     expect(screen.getByTestId('square-board-container')).toHaveClass('lg:aspect-square');
+  });
+
+  it('renders a shared top chrome status stack with Charleston slot and wall counter slot', () => {
+    const mockWs = createMockWebSocket();
+
+    render(<GameBoard initialState={fixtures.gameStates.charlestonFirstRight} ws={mockWs} />);
+
+    expect(screen.getByTestId('top-chrome-status-stack')).toBeInTheDocument();
+    expect(screen.getByTestId('charleston-top-chrome-slot')).toBeInTheDocument();
+    expect(screen.getByTestId('wall-counter')).toBeInTheDocument();
   });
 
   it('renders the call-window prompt only once at board level', () => {

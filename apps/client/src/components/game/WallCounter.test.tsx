@@ -15,6 +15,8 @@ describe('WallCounter', () => {
     expect(counter.getAttribute('style')).toContain('rgba(12, 35, 18');
     expect(counter.getAttribute('style')).toContain('rgba(80, 160, 100');
     expect(counter.className).not.toContain('bg-black');
+    expect(counter).not.toHaveClass('fixed');
+    expect(counter).toHaveAttribute('data-chrome-layer', 'z-20');
   });
 
   test('AC-5 (US-079): uses compact label "Wall:" instead of "Tiles Remaining:"', () => {

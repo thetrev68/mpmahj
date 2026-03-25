@@ -71,6 +71,8 @@ interface PlayerRackProps {
   blindPassCount?: number;
   /** Whether this rack currently owns the active turn */
   isActive?: boolean;
+  /** Whether the rack should render its local selection counter */
+  showSelectionCounter?: boolean;
 }
 
 const PLAYER_TILE_WIDTH_PX = 63;
@@ -100,6 +102,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   onJokerTileClick,
   blindPassCount,
   isActive = false,
+  showSelectionCounter = true,
 }) => {
   const { playSound } = useSoundEffects();
   const sortedTiles = [...tiles].sort((a, b) => canonicalTileComparator(a.tile, b.tile));
@@ -181,7 +184,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
       aria-label={`Your rack: ${tiles.length} tiles`}
     >
       {/* Selection counter (only in interactive modes) */}
-      {mode !== 'view-only' && (
+      {showSelectionCounter && mode !== 'view-only' && (
         <div
           className="text-white text-sm font-medium"
           data-testid="selection-counter"
@@ -203,8 +206,9 @@ export const PlayerRack: FC<PlayerRackProps> = ({
       {/* Tile rack — wooden holder */}
       <div
         ref={rackViewportRef}
-        className="relative w-full max-w-[1038px] overflow-visible"
+        className="relative w-full max-w-full overflow-visible"
         data-testid="player-rack-viewport"
+        data-board-region="player-rack-containment"
         style={{ height: `${PLAYER_RACK_CONTENT_HEIGHT_PX * rackScale}px` }}
       >
         <div

@@ -15,6 +15,12 @@ export interface ActionBarProps {
   isProcessing?: boolean;
   /** Number of tiles to pass blindly (0-3, only for blind pass stages) */
   blindPassCount?: number;
+  /** Optional selection summary rendered inside the action region owner */
+  selectionSummary?: {
+    selectedCount: number;
+    maxSelection: number;
+    blindPassCount?: number;
+  };
   /** Phase-owned Charleston pass eligibility when another surface shares the same command */
   canCommitCharlestonPass?: boolean;
   /** Whether the player has already submitted their pass */

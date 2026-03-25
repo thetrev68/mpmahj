@@ -33,6 +33,7 @@ describe('TurnIndicator', () => {
 
       expect(screen.getByTestId('turn-indicator-east')).toBeInTheDocument();
       expect(screen.getByText('East')).toBeInTheDocument();
+      expect(screen.getByTestId('turn-indicator-east')).toHaveAttribute('data-anchor', 'east-edge');
     });
 
     it('renders indicator for West seat', () => {
@@ -47,6 +48,10 @@ describe('TurnIndicator', () => {
 
       expect(screen.getByTestId('turn-indicator-north')).toBeInTheDocument();
       expect(screen.getByText('North')).toBeInTheDocument();
+      expect(screen.getByTestId('turn-indicator-north')).toHaveAttribute(
+        'data-anchor',
+        'north-edge'
+      );
     });
   });
 
@@ -231,6 +236,7 @@ describe('TurnIndicator', () => {
       const badge = screen.getByTestId('dead-hand-badge-south');
       expect(badge).toHaveClass('absolute');
       expect(badge).not.toHaveClass('fixed');
+      expect(badge).toHaveAttribute('data-anchor', 'south-player-zone');
       expect(badge).toHaveAttribute('aria-label', 'South has a dead hand');
     });
     it('shows dead hand badge alongside turn indicator for same seat', () => {

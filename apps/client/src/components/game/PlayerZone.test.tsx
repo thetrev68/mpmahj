@@ -15,7 +15,8 @@ describe('PlayerZone', () => {
 
     const zone = screen.getByTestId('player-zone');
     expect(zone).toBeInTheDocument();
-    expect(zone).toHaveClass('relative', 'w-full');
+    expect(zone).toHaveClass('relative', 'w-full', 'rounded-[1.75rem]');
+    expect(zone).toHaveAttribute('data-board-region', 'south-interaction-region');
     expect(zone).not.toHaveClass('fixed');
     expect(zone.getAttribute('style')).toBeNull();
   });
@@ -32,6 +33,10 @@ describe('PlayerZone', () => {
     expect(
       within(screen.getByTestId('player-zone-staging-slot')).getByTestId('staging-content')
     ).toBeInTheDocument();
+    expect(screen.getByTestId('player-zone-staging-slot')).toHaveAttribute(
+      'data-board-region',
+      'staging-region'
+    );
   });
 
   test('renders rack content in the lower row', () => {
@@ -46,6 +51,10 @@ describe('PlayerZone', () => {
     expect(
       within(screen.getByTestId('player-zone-rack-slot')).getByTestId('rack-content')
     ).toBeInTheDocument();
+    expect(screen.getByTestId('player-zone-rack-slot')).toHaveAttribute(
+      'data-board-region',
+      'rack-region'
+    );
   });
 
   test('renders actions content beside the staging slot', () => {
@@ -60,6 +69,10 @@ describe('PlayerZone', () => {
     expect(
       within(screen.getByTestId('player-zone-actions-slot')).getByTestId('actions-content')
     ).toBeInTheDocument();
+    expect(screen.getByTestId('player-zone-actions-slot')).toHaveAttribute(
+      'data-board-region',
+      'action-region'
+    );
   });
 
   test('uses a full-width inner wrapper for the widened staging layout', () => {
@@ -76,7 +89,7 @@ describe('PlayerZone', () => {
     expect(innerWrapper).not.toHaveClass('max-w-[920px]');
   });
 
-  test('uses tight gap-1.5 spacing to group staging, actions, and rack as one surface (AC-1)', () => {
+  test('uses the named-region grid inside one south interaction surface', () => {
     renderWithProviders(
       <PlayerZone
         staging={<div>staging</div>}
@@ -85,8 +98,7 @@ describe('PlayerZone', () => {
       />
     );
 
-    expect(screen.getByTestId('player-zone-layout')).toHaveClass('gap-1.5');
-    expect(screen.getByTestId('player-zone-layout')).not.toHaveClass('gap-3');
+    expect(screen.getByTestId('player-zone-layout')).toHaveClass('gap-3');
   });
 
   test('uses the shared grid contract instead of absolute right offsets', () => {
@@ -100,13 +112,12 @@ describe('PlayerZone', () => {
 
     expect(screen.getByTestId('player-zone-layout')).toHaveClass(
       'grid',
-      'lg:grid-cols-[minmax(0,1fr)_280px]'
+      'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]'
     );
     expect(screen.getByTestId('player-zone-actions-slot')).toHaveClass(
       'flex-col',
       'items-stretch',
-      'justify-center',
-      'py-2'
+      'justify-start'
     );
     expect(screen.getByTestId('player-zone-actions-slot')).not.toHaveClass(
       'lg:absolute',
