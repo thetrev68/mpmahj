@@ -26,10 +26,6 @@ export const ActionBar: FC<ActionBarProps> = ({
   canCommitCharlestonPass = false,
   hasSubmittedPass = false,
   hasSubmittedVote = false,
-  myVote,
-  votedPlayers = [],
-  totalPlayers = 4,
-  botVoteMessage,
   suppressCharlestonPassAction = false,
   suppressDiscardAction = false,
   courtesyPassCount,
@@ -145,10 +141,6 @@ export const ActionBar: FC<ActionBarProps> = ({
           canCommitCharlestonPass={canCommitCharlestonPass}
           hasSubmittedPass={hasSubmittedPass}
           hasSubmittedVote={hasSubmittedVote}
-          myVote={myVote}
-          votedPlayers={votedPlayers}
-          totalPlayers={totalPlayers}
-          botVoteMessage={botVoteMessage}
           suppressCharlestonPassAction={suppressCharlestonPassAction}
           suppressDiscardAction={suppressDiscardAction}
           courtesyPassCount={courtesyPassCount}

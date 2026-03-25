@@ -515,10 +515,6 @@ export function CharlestonPhase({
                 isProcessing={passSubmissionInFlight}
                 hasSubmittedPass={isCourtesyStage ? isCourtesyWaiting : isPassUiLocked}
                 hasSubmittedVote={storeHasSubmittedVote}
-                myVote={storeMyVote ?? undefined}
-                votedPlayers={storeVotedPlayers}
-                totalPlayers={4}
-                botVoteMessage={storeBotVoteMessage || undefined}
                 disabled={false}
                 readOnly={isHistoricalView}
                 blindPassCount={stagedIncomingTiles.length}

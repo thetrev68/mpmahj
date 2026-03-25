@@ -18,10 +18,6 @@ interface ActionBarPhaseActionsProps {
   canCommitCharlestonPass: boolean;
   hasSubmittedPass: boolean;
   hasSubmittedVote: boolean;
-  myVote?: ActionBarProps['myVote'];
-  votedPlayers: NonNullable<ActionBarProps['votedPlayers']>;
-  totalPlayers: number;
-  botVoteMessage?: string;
   suppressCharlestonPassAction: boolean;
   suppressDiscardAction: boolean;
   courtesyPassCount?: number;
@@ -124,7 +120,6 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     buttonDisabled: boolean,
     options?: {
       demoted?: boolean;
-      actionable?: boolean;
     }
   ) => (
     <Button
@@ -134,12 +129,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
       className={cn(
         'w-full',
         options?.demoted
-          ? cn(
-              'bg-background text-muted-foreground',
-              options?.actionable
-                ? 'border-amber-400/70 text-amber-100 hover:border-amber-300 hover:bg-amber-500/10 hover:text-amber-50 dark:bg-slate-950'
-                : 'border-border/80 hover:border-muted-foreground hover:text-foreground dark:bg-slate-950'
-            )
+          ? 'bg-background text-muted-foreground border-border/80 hover:border-muted-foreground hover:text-foreground dark:bg-slate-950'
           : 'bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-400 hover:to-yellow-500 text-black font-bold motion-safe:animate-pulse'
       )}
       data-testid="declare-mahjong-button"
@@ -173,8 +163,7 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
 
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
     const mahjongButton = renderMahjongButton(disabled || isBusy || !canDeclareMahjong, {
-      demoted: true,
-      actionable: canDeclareMahjong,
+      demoted: !canDeclareMahjong,
     });
 
     if (phase.Charleston === 'CourtesyAcross') {

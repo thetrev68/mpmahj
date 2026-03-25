@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { useState } from 'react';
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest';
+import { act } from '@testing-library/react';
 import { renderWithProviders, screen } from '@/test/test-utils';
 import { fixtures } from '@/test/fixtures';
 import { RightRailHintSection } from './RightRailHintSection';
@@ -39,7 +41,64 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
   );
 }
 
+function RightRailHintSectionHarness(
+  props: Partial<Parameters<typeof RightRailHintSection>[0]> = {}
+) {
+  const [needsExtraVerticalSpace, setNeedsExtraVerticalSpace] = useState(false);
+
+  return (
+    <div
+      data-testid="right-rail-bottom"
+      data-hint-expanded={needsExtraVerticalSpace || undefined}
+      className="flex min-h-0 flex-1 flex-col bg-card p-4 dark:bg-slate-900"
+    >
+      <RightRailHintSection
+        canRequestHint={true}
+        currentHint={null}
+        hintPending={false}
+        hintError={null}
+        hintSettings={createHintSettings()}
+        isHistoricalView={false}
+        openHintRequestDialog={vi.fn()}
+        cancelHintRequest={vi.fn()}
+        onNeedsExtraVerticalSpace={setNeedsExtraVerticalSpace}
+        {...props}
+      />
+    </div>
+  );
+}
+
 describe('RightRailHintSection', () => {
+  let resizeObserverCallback: ResizeObserverCallback | null = null;
+  const resizeObserverObserve = vi.fn();
+  const resizeObserverDisconnect = vi.fn();
+  const originalResizeObserver = globalThis.ResizeObserver;
+
+  beforeEach(() => {
+    resizeObserverCallback = null;
+    resizeObserverObserve.mockReset();
+    resizeObserverDisconnect.mockReset();
+
+    globalThis.ResizeObserver = class ResizeObserver {
+      constructor(callback: ResizeObserverCallback) {
+        resizeObserverCallback = callback;
+      }
+
+      observe = resizeObserverObserve;
+      disconnect = resizeObserverDisconnect;
+      unobserve = vi.fn();
+    };
+  });
+
+  afterEach(() => {
+    if (originalResizeObserver === undefined) {
+      Reflect.deleteProperty(globalThis, 'ResizeObserver');
+      return;
+    }
+
+    globalThis.ResizeObserver = originalResizeObserver;
+  });
+
   it('renders the hint section container with themed AI Hint heading', () => {
     renderSection();
 
@@ -129,5 +188,60 @@ describe('RightRailHintSection', () => {
     expect(screen.queryByTestId('get-hint-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('get-new-hint-button')).not.toBeInTheDocument();
     expect(screen.getByText('AI Hint')).toHaveClass('text-foreground');
+  });
+
+  it('fires extra-space callback and sets expanded state when hint content overflows', () => {
+    const onNeedsExtraVerticalSpace = vi.fn();
+    renderSection({
+      currentHint: baseHint,
+      onNeedsExtraVerticalSpace,
+    });
+
+    const body = screen.getByTestId('hint-panel').parentElement?.parentElement as HTMLDivElement;
+    expect(body).toBeTruthy();
+
+    Object.defineProperty(body, 'clientHeight', {
+      configurable: true,
+      value: 120,
+    });
+    Object.defineProperty(body, 'scrollHeight', {
+      configurable: true,
+      value: 180,
+    });
+
+    act(() => {
+      resizeObserverCallback?.([], {} as ResizeObserver);
+    });
+
+    expect(onNeedsExtraVerticalSpace).toHaveBeenCalledWith(true);
+  });
+
+  it('clears extra-space state when no hint is active', () => {
+    const { rerender } = renderWithProviders(
+      <RightRailHintSectionHarness currentHint={baseHint} />
+    );
+
+    const body = screen.getByTestId('hint-panel').parentElement?.parentElement as HTMLDivElement;
+    expect(body).toBeTruthy();
+
+    Object.defineProperty(body, 'clientHeight', {
+      configurable: true,
+      value: 120,
+    });
+    Object.defineProperty(body, 'scrollHeight', {
+      configurable: true,
+      value: 180,
+    });
+
+    act(() => {
+      resizeObserverCallback?.([], {} as ResizeObserver);
+    });
+    expect(screen.getByTestId('right-rail-bottom')).toHaveAttribute('data-hint-expanded', 'true');
+
+    act(() => {
+      rerender(<RightRailHintSectionHarness currentHint={null} />);
+    });
+
+    expect(screen.getByTestId('right-rail-bottom')).not.toHaveAttribute('data-hint-expanded');
   });
 });

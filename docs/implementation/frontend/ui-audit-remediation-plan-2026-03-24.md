@@ -29,36 +29,36 @@ The audit already contains enough detail for several direct fixes. The failure m
 
 These items are implementation-ready from the audit plus current code context:
 
-| Audit # | Issue | Why it is ready |
-| --- | --- | --- |
-| 1 | Mahjong button pulsing during Charleston | Existing code path is identified and behavior is concrete |
-| 5 | Leave Game overlaps Log Out | Placement bug with known container |
-| 6 | Empty space above AI Hint in right rail | Existing spacer behavior is explicit |
-| 7 | Right rail dark-mode theme mismatch | Surface tokens can be corrected directly |
-| 15 | Green felt bleed-through on dark surfaces | Same surface-token cleanup as #7 |
-| 16 | Instruction text contrast | Styling-only correction |
-| 17 | Board width formula off by 1rem | Concrete layout math bug |
-| 18 | No right-side viewport padding on lg | Concrete layout padding change |
-| 19 | TurnIndicator fixed to viewport instead of board | Positioning model is clearly wrong |
-| 21 | Fixed 1038px player rack causes horizontal scroll | Hardcoded width is explicitly identified |
+| Audit # | Issue                                             | Why it is ready                                           |
+| ------- | ------------------------------------------------- | --------------------------------------------------------- |
+| 1       | Mahjong button pulsing during Charleston          | Existing code path is identified and behavior is concrete |
+| 5       | Leave Game overlaps Log Out                       | Placement bug with known container                        |
+| 6       | Empty space above AI Hint in right rail           | Existing spacer behavior is explicit                      |
+| 7       | Right rail dark-mode theme mismatch               | Surface tokens can be corrected directly                  |
+| 15      | Green felt bleed-through on dark surfaces         | Same surface-token cleanup as #7                          |
+| 16      | Instruction text contrast                         | Styling-only correction                                   |
+| 17      | Board width formula off by 1rem                   | Concrete layout math bug                                  |
+| 18      | No right-side viewport padding on lg              | Concrete layout padding change                            |
+| 19      | TurnIndicator fixed to viewport instead of board  | Positioning model is clearly wrong                        |
+| 21      | Fixed 1038px player rack causes horizontal scroll | Hardcoded width is explicitly identified                  |
 
 ### Needs Compact Spec First
 
 These items describe valid problems, but still need exact layout rules before implementation:
 
-| Audit # | Issue | What is missing |
-| --- | --- | --- |
-| 2 | Staging area + action pane not one fixed unit | Container ownership, bounds, fixed anchors, breakpoint behavior |
-| 3 | Side opponent racks inset from board perimeter | Exact board square contract and rack edge alignment rules |
-| 4 | Player rack bleeds into right rail | Depends on final board-region ownership and width rules |
-| 8 | ActionBar instruction text may be cut off | Depends on final fixed action container dimensions |
-| 9 | `0/3 selected` counter placement | Needs agreed location inside the shared interaction region |
-| 10 | Opponent racks feel cramped / no spatial edge relationship | Needs final gap and perimeter geometry decisions |
-| 11 | Side rack wood texture may not fit dark mode | Needs visual direction decision, not just bug-fix styling |
-| 12 | Competing z-index layers | Needs documented z-index scale and ownership |
-| 13 | Rack width not constrained to board | Depends on player-zone and board-width contract |
-| 14 | Rack background extends beyond board | Same as #13 |
-| 20 | Fixed headers can collide at top | Needs top-chrome stacking and spacing rules |
+| Audit # | Issue                                                      | What is missing                                                 |
+| ------- | ---------------------------------------------------------- | --------------------------------------------------------------- |
+| 2       | Staging area + action pane not one fixed unit              | Container ownership, bounds, fixed anchors, breakpoint behavior |
+| 3       | Side opponent racks inset from board perimeter             | Exact board square contract and rack edge alignment rules       |
+| 4       | Player rack bleeds into right rail                         | Depends on final board-region ownership and width rules         |
+| 8       | ActionBar instruction text may be cut off                  | Depends on final fixed action container dimensions              |
+| 9       | `0/3 selected` counter placement                           | Needs agreed location inside the shared interaction region      |
+| 10      | Opponent racks feel cramped / no spatial edge relationship | Needs final gap and perimeter geometry decisions                |
+| 11      | Side rack wood texture may not fit dark mode               | Needs visual direction decision, not just bug-fix styling       |
+| 12      | Competing z-index layers                                   | Needs documented z-index scale and ownership                    |
+| 13      | Rack width not constrained to board                        | Depends on player-zone and board-width contract                 |
+| 14      | Rack background extends beyond board                       | Same as #13                                                     |
+| 20      | Fixed headers can collide at top                           | Needs top-chrome stacking and spacing rules                     |
 
 ---
 

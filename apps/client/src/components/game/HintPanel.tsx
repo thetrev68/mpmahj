@@ -33,23 +33,12 @@ function formatCompactNumber(value: number): string {
   return value.toFixed(3);
 }
 
-function getPatternVariantLabel(
-  pattern: PatternSummary,
-  duplicateNameCounts: Map<string, number>
-): string | null {
-  if ((duplicateNameCounts.get(pattern.pattern_name) ?? 0) > 1) {
-    return pattern.variation_id || pattern.pattern_id;
-  }
-
+function getPatternVariantLabel(pattern: PatternSummary): string {
   return pattern.variation_id || pattern.pattern_id;
 }
 
 export function HintPanel({ hint }: HintPanelProps) {
   const bestPatterns = hint.best_patterns.slice(0, 3);
-  const duplicateNameCounts = bestPatterns.reduce((counts, pattern) => {
-    counts.set(pattern.pattern_name, (counts.get(pattern.pattern_name) ?? 0) + 1);
-    return counts;
-  }, new Map<string, number>());
   const isCharlestonHint = hint.charleston_pass_recommendations.length > 0;
   const discardName = hint.recommended_discard === null ? 'No discard recommendation' : undefined;
 
@@ -117,7 +106,7 @@ export function HintPanel({ hint }: HintPanelProps) {
             </p>
             <ul className="mt-2 space-y-2">
               {bestPatterns.map((pattern, index) => {
-                const variantLabel = getPatternVariantLabel(pattern, duplicateNameCounts);
+                const variantLabel = getPatternVariantLabel(pattern);
 
                 return (
                   <li

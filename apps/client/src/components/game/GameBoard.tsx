@@ -371,6 +371,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           data-testid="board-layout-shell"
         >
           <div
+            // 26rem = 1rem left layout padding + 1rem right layout padding + 24rem minimum right rail width.
             className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))] lg:flex-none lg:aspect-square"
             data-testid="square-board-container"
           >

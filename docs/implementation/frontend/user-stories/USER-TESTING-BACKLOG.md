@@ -52,10 +52,10 @@ Last Updated: 2026-03-24. Added remediation follow-up stories US-084 through US-
 | [US-081](./US-081-charleston-hint-panel-tile-first-pattern-presentation.md)            | Charleston Hint Panel Tile-First Pattern Presentation                    | Completed | High     | L     |
 | [US-082](./US-082-canonical-rack-auto-sort-and-group-spacing.md)                       | Canonical Rack Auto-Sort and Group Spacing                               | Completed | High     | L     |
 | [US-083](./US-083-optional-discard-pile-canonical-sorting-setting.md)                  | Optional Discard-Pile Canonical Sorting Setting                          | Completed | Medium   | L     |
-| [US-084](./US-084-charleston-cta-and-right-rail-surface-recovery.md)                   | Charleston CTA and Right Rail Surface Recovery                           | Completed  | High     | M     |
-| [US-085](./US-085-board-width-math-and-fixed-positioning-recovery.md)                  | Board Width Math and Fixed Positioning Recovery                          | Completed  | High     | M     |
-| [US-086](./US-086-charleston-board-region-ownership-and-chrome-stacking.md)            | Charleston Board Region Ownership and Chrome Stacking                    | Completed  | Critical | M     |
-| [US-087](./US-087-charleston-mahjong-signal-and-post-audit-cleanup.md)            | Charleston Mahjong Signal and Post-Audit Code Cleanup                  | Proposed   | High     | N     |
+| [US-084](./US-084-charleston-cta-and-right-rail-surface-recovery.md)                   | Charleston CTA and Right Rail Surface Recovery                           | Completed | High     | M     |
+| [US-085](./US-085-board-width-math-and-fixed-positioning-recovery.md)                  | Board Width Math and Fixed Positioning Recovery                          | Completed | High     | M     |
+| [US-086](./US-086-charleston-board-region-ownership-and-chrome-stacking.md)            | Charleston Board Region Ownership and Chrome Stacking                    | Completed | Critical | M     |
+| [US-087](./US-087-charleston-mahjong-signal-and-post-audit-cleanup.md)                 | Charleston Mahjong Signal and Post-Audit Code Cleanup                    | Completed | High     | N     |
 
 ## Suggested Implementation Batches
 
@@ -65,12 +65,12 @@ Last Updated: 2026-03-24. Added remediation follow-up stories US-084 through US-
 4. Batch D (recovery): US-041 + US-042 + US-043 + US-044 + US-045. \*Done
 5. Batch F (stability recovery): US-058 + US-059 + US-060 + US-069. \*Done
 6. Batch G (frontend polish recovery): US-061 + US-062 + US-063 + US-064 + US-065. \*Done
-7. Batch H (proactive audit recovery): US-067 + US-070 + US-071 + US-072.
-8. Batch I (deferred UX polish): US-073.
-9. Batch K (Charleston interaction hierarchy): US-076 + US-077 + US-078.
-10. Batch L (Charleston chrome + rack/discard follow-up): US-079 + US-080 + US-081 + US-082 + US-083.
-11. Batch M (UI audit remediation recovery): US-084 + US-085 + US-086.
-12. Batch N (post audit cleanup): US-087
+7. Batch H (proactive audit recovery): US-067 + US-070 + US-071 + US-072. \*Done
+8. Batch I (deferred UX polish): US-073. \*Done
+9. Batch K (Charleston interaction hierarchy): US-076 + US-077 + US-078. \*Done
+10. Batch L (Charleston chrome + rack/discard follow-up): US-079 + US-080 + US-081 + US-082 + US-083. \*Done
+11. Batch M (UI audit remediation recovery): US-084 + US-085 + US-086. \*Done
+12. Batch N (post audit cleanup): US-087 \*Done
 
 ## Deferred / Follow-up
 

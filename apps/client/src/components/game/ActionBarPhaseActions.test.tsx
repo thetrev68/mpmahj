@@ -14,8 +14,6 @@ describe('ActionBarPhaseActions', () => {
     canCommitCharlestonPass: false,
     hasSubmittedPass: false,
     hasSubmittedVote: false,
-    votedPlayers: [],
-    totalPlayers: 4,
     suppressCharlestonPassAction: false,
     suppressDiscardAction: false,
     canCommitDiscard: false,
@@ -234,7 +232,28 @@ describe('ActionBarPhaseActions', () => {
       expect(instruction).not.toHaveClass('text-left', 'text-muted-foreground');
     });
 
-    test('AC-1/AC-2: Charleston Mahjong button uses a demoted non-pulsing treatment in the baseline case', () => {
+    test('AC-1: Charleston Mahjong button uses a demoted non-pulsing treatment when unavailable', () => {
+      renderWithProviders(
+        <ActionBarPhaseActions
+          {...baseProps}
+          phase={{ Charleston: 'FirstRight' }}
+          canDeclareMahjong={false}
+          onDeclareMahjong={vi.fn()}
+        />
+      );
+
+      const mahjongBtn = screen.getByTestId('declare-mahjong-button');
+      expect(mahjongBtn).toHaveClass(
+        'bg-background',
+        'border-border/80',
+        'text-muted-foreground',
+        'dark:bg-slate-950'
+      );
+      expect(mahjongBtn).not.toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
+      expect(mahjongBtn).toBeDisabled();
+    });
+
+    test('AC-2: Charleston Mahjong button uses the full primary CTA treatment when available', () => {
       renderWithProviders(
         <ActionBarPhaseActions
           {...baseProps}
@@ -246,12 +265,12 @@ describe('ActionBarPhaseActions', () => {
 
       const mahjongBtn = screen.getByTestId('declare-mahjong-button');
       expect(mahjongBtn).toHaveClass(
-        'bg-background',
-        'border-amber-400/70',
-        'text-amber-100',
-        'dark:bg-slate-950'
+        'from-yellow-500',
+        'to-yellow-600',
+        'text-black',
+        'font-bold',
+        'motion-safe:animate-pulse'
       );
-      expect(mahjongBtn).not.toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
       expect(mahjongBtn).toBeEnabled();
     });
 
@@ -269,7 +288,7 @@ describe('ActionBarPhaseActions', () => {
       expect(screen.getByTestId('proceed-button')).toBeInTheDocument();
     });
 
-    test('AC-4: Proceed remains the primary CTA while Charleston Mahjong stays secondary', () => {
+    test('AC-4: Proceed remains the first CTA while Charleston Mahjong escalates independently', () => {
       renderWithProviders(
         <ActionBarPhaseActions
           {...baseProps}
@@ -283,7 +302,7 @@ describe('ActionBarPhaseActions', () => {
       const proceedBtn = screen.getByTestId('proceed-button');
       const mahjongBtn = screen.getByTestId('declare-mahjong-button');
       expect(proceedBtn).toHaveClass('from-emerald-500', 'to-emerald-600');
-      expect(mahjongBtn).not.toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
+      expect(mahjongBtn).toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
     });
 
     test('EC-1: actionable Charleston Mahjong calls the provided handler without moving button order', async () => {
@@ -365,7 +384,7 @@ describe('ActionBarPhaseActions', () => {
       expect(screen.queryByTestId('declare-mahjong-button')).not.toBeInTheDocument();
     });
 
-    test('EC-1: Charleston courtesy phase also uses demoted Mahjong button when actionable', () => {
+    test('EC-3: Charleston courtesy phase also escalates Mahjong when actionable', () => {
       renderWithProviders(
         <ActionBarPhaseActions
           {...baseProps}
@@ -377,8 +396,7 @@ describe('ActionBarPhaseActions', () => {
       );
 
       const mahjongBtn = screen.getByTestId('declare-mahjong-button');
-      expect(mahjongBtn).toHaveClass('border-amber-400/70', 'text-amber-100');
-      expect(mahjongBtn).not.toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
+      expect(mahjongBtn).toHaveClass('from-yellow-500', 'motion-safe:animate-pulse');
     });
   });
 });
