@@ -231,6 +231,13 @@ export function useGameEvents(options: UseGameEventsOptions): UseGameEventsRetur
 
   const handleStateSnapshotEnvelope = useCallback(
     (envelope: InboundEnvelope) => {
+      // Clear transient playing-phase UI state so stale call-window / staging /
+      // processing flags from a prior session do not survive a reconnect snapshot.
+      // Note: we do NOT full-reset because charleston staging state is rebuilt
+      // from the snapshot by CharlestonPhase on remount.
+      const { dispatch } = useGameUIStore.getState();
+      dispatch({ type: 'CLOSE_CALL_WINDOW' });
+      dispatch({ type: 'RESET_PLAYING_STATE' });
       getDispatchers().handleStateSnapshotEnvelope(envelope);
     },
     [getDispatchers]

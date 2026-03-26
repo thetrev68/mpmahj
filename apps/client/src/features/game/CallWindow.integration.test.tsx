@@ -201,6 +201,77 @@ describe('Call Window Integration', () => {
     });
   });
 
+  it('call window opening clears discard selection and transitions to call mode', async () => {
+    const user = userEvent.setup();
+    // Start from Discarding state where South is discarding
+    const initialState = {
+      ...gameStates.playingDiscarding,
+      your_hand: [...gameStates.playingDiscarding.your_hand, DOT_7, DOT_7],
+    };
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // Select a tile for discard
+    await user.click(await screen.findByTestId('tile-5-5-0'));
+    expect(screen.getByTestId('tile-5-5-0')).toHaveClass('tile-selected');
+
+    // Call window opens (another player's discard triggered it)
+    openCallWindow();
+
+    // Discard selection should be cleared
+    await waitFor(() => {
+      expect(screen.getByTestId('tile-5-5-0')).not.toHaveClass('tile-selected');
+    });
+
+    // Call window staging should appear
+    expect(screen.getByTestId(`staging-incoming-tile-call-window-${DOT_7}`)).toBeInTheDocument();
+
+    // Proceed should send Pass (not DiscardTile)
+    await user.click(screen.getByTestId('proceed-button'));
+
+    expect(getLastCommand()).toEqual({
+      Pass: { player: SOUTH },
+    });
+  });
+
+  it('Proceed after call window sends Pass even when discard was previously staged', async () => {
+    const user = userEvent.setup();
+    const initialState = {
+      ...gameStates.playingDiscarding,
+      your_hand: [...gameStates.playingDiscarding.your_hand, DOT_7, DOT_7],
+    };
+    render(<GameBoard initialState={initialState} ws={mockWs} />);
+
+    // Select a tile for discard
+    await user.click(await screen.findByTestId('tile-5-5-0'));
+
+    // Call window opens — clears selection
+    openCallWindow();
+
+    await waitFor(() => {
+      expect(screen.getByTestId(`staging-incoming-tile-call-window-${DOT_7}`)).toBeInTheDocument();
+    });
+
+    // Now stage a claim (2 DOT_7 tiles for a Pung)
+    await user.click(await screen.findByTestId('tile-24-24-0'));
+    await user.click(screen.getByTestId('tile-24-24-1'));
+
+    await user.click(screen.getByTestId('proceed-button'));
+
+    // Should send meld intent, NOT DiscardTile
+    expect(getLastCommand()).toMatchObject({
+      DeclareCallIntent: {
+        player: SOUTH,
+        intent: {
+          Meld: {
+            meld_type: 'Pung',
+            tiles: [DOT_7, DOT_7, DOT_7],
+            called_tile: DOT_7,
+          },
+        },
+      },
+    });
+  });
+
   it('EC-2: staged claim selection clears when the claim window closes', async () => {
     const user = userEvent.setup();
     const initialState = {

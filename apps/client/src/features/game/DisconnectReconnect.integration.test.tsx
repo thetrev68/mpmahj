@@ -144,6 +144,161 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
     expect(screen.getByTestId('charleston-tracker')).toBeInTheDocument();
   });
 
+  test('reconnect during discard staging clears staged tile and restores interactivity', async () => {
+    const { instances } = setupWebSocketMock();
+    const playingState = gameStates.playingDiscarding as GameStateSnapshot;
+
+    renderWithProviders(<GameBoard initialState={playingState} />);
+
+    const firstSocket = instances[0];
+    act(() => {
+      firstSocket.triggerOpen();
+      firstSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-south',
+          display_name: 'SouthPlayer',
+          session_token: '55555555-5555-5555-5555-555555555555',
+          seat: 'South',
+        },
+      });
+    });
+
+    // Select a tile for discard — tile value 5 is in the hand
+    const tilesToDiscard = screen.getAllByTestId(/^tile-5-5-/);
+    fireEvent.click(tilesToDiscard[0]);
+    expect(tilesToDiscard[0]).toHaveClass('tile-selected');
+    expect(screen.getByTestId('proceed-button')).toBeEnabled();
+
+    // Disconnect mid-staging
+    act(() => {
+      firstSocket.triggerClose(1006, 'network drop');
+    });
+
+    expect(screen.getByTestId('disconnect-interaction-lock')).toBeInTheDocument();
+
+    // Reconnect
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    const reconnectSocket = instances[instances.length - 1];
+    act(() => {
+      reconnectSocket.triggerOpen();
+      reconnectSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-south',
+          display_name: 'SouthPlayer',
+          session_token: '55555555-5555-5555-5555-555555555555',
+          seat: 'South',
+        },
+      });
+      reconnectSocket.triggerMessage({
+        kind: 'StateSnapshot',
+        payload: { snapshot: playingState },
+      });
+    });
+
+    // After reconnect, staged discard is cleared (PlayingPhase remounts via snapshotRevision key)
+    expect(screen.queryByTestId('disconnect-interaction-lock')).not.toBeInTheDocument();
+    // No tile should be selected (no elements with tile-selected class)
+    const tiles = screen.getByTestId('player-rack').querySelectorAll('.tile-selected');
+    expect(tiles).toHaveLength(0);
+    // Hand should still be interactive (14 tiles rendered)
+    expect(screen.getByTestId('player-rack')).toHaveAttribute('aria-label', 'Your rack: 14 tiles');
+    // No staged outgoing tiles
+    expect(screen.queryByTestId(/staging-outgoing-tile/)).not.toBeInTheDocument();
+  });
+
+  test('reconnect during call window clears call window state', async () => {
+    const { instances } = setupWebSocketMock();
+    const callWindowState = gameStates.playingCallWindow as GameStateSnapshot;
+
+    renderWithProviders(<GameBoard initialState={callWindowState} />);
+
+    const firstSocket = instances[0];
+    act(() => {
+      firstSocket.triggerOpen();
+      firstSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-south',
+          display_name: 'SouthPlayer',
+          session_token: '66666666-6666-6666-6666-666666666666',
+          seat: 'South',
+        },
+      });
+    });
+
+    // Open a call window via event
+    act(() => {
+      firstSocket.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              CallWindowOpened: {
+                tile: 24,
+                discarded_by: 'North',
+                can_call: ['South'],
+                timer: 10,
+                started_at_ms: Date.now(),
+                timer_mode: 'Standard',
+              },
+            },
+          },
+        },
+      });
+    });
+
+    // Call window should be visible
+    expect(screen.getByTestId('staging-incoming-tile-call-window-24')).toBeInTheDocument();
+
+    // Disconnect mid-call-window
+    act(() => {
+      firstSocket.triggerClose(1006, 'network drop');
+    });
+
+    expect(screen.getByTestId('disconnect-interaction-lock')).toBeInTheDocument();
+
+    // Reconnect with snapshot in Discarding stage (call window resolved server-side)
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    const reconnectSocket = instances[instances.length - 1];
+    const postReconnectState: GameStateSnapshot = {
+      ...callWindowState,
+      phase: { Playing: { Discarding: { player: 'North' } } },
+      current_turn: 'North',
+      discard_pile: [...callWindowState.discard_pile, { tile: 24, discarded_by: 'North' }],
+    };
+
+    act(() => {
+      reconnectSocket.triggerOpen();
+      reconnectSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-south',
+          display_name: 'SouthPlayer',
+          session_token: '66666666-6666-6666-6666-666666666666',
+          seat: 'South',
+        },
+      });
+      reconnectSocket.triggerMessage({
+        kind: 'StateSnapshot',
+        payload: { snapshot: postReconnectState },
+      });
+    });
+
+    // Call window state should be gone after remount
+    expect(screen.queryByTestId('disconnect-interaction-lock')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('staging-incoming-tile-call-window-24')).not.toBeInTheDocument();
+    // Hand is back to normal playing mode
+    expect(screen.getByTestId('player-rack')).toBeInTheDocument();
+  });
+
   test('preserves discard-pool layout after reconnect snapshot remount in playing phase', async () => {
     const { instances } = setupWebSocketMock();
     const playingState = gameStates.playingDiscarding as GameStateSnapshot;
