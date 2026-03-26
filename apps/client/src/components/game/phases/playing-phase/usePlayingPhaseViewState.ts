@@ -55,7 +55,11 @@ export function usePlayingPhaseViewState({
   const presentationCallWindow = useMemo(
     () => ({
       callWindow: callWindow.callWindow
-        ? { tile: callWindow.callWindow.tile, discardedBy: callWindow.callWindow.discardedBy }
+        ? {
+            tile: callWindow.callWindow.tile,
+            discardedBy: callWindow.callWindow.discardedBy,
+            hasResponded: callWindow.callWindow.hasResponded,
+          }
         : null,
     }),
     [callWindow.callWindow]

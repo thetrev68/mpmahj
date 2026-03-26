@@ -35,7 +35,7 @@ interface AutoDrawSlice {
 }
 
 interface CallWindowPresentationSlice {
-  callWindow: { tile: Tile; discardedBy: Seat } | null;
+  callWindow: { tile: Tile; discardedBy: Seat; hasResponded: boolean } | null;
 }
 
 interface PlayingStateSlice {
@@ -186,6 +186,16 @@ export function PlayingPhasePresentation({
     isMyTurn &&
     !playing.isProcessing &&
     selectedIds.length === 1;
+  const canCommitCall =
+    isClaimWindowActive &&
+    !activeCallWindow!.hasResponded &&
+    !playing.isProcessing &&
+    selectedIds.length >= 2;
+  const canCommitPass =
+    isClaimWindowActive &&
+    !activeCallWindow!.hasResponded &&
+    !playing.isProcessing &&
+    selectedIds.length === 0;
   const actionBarPhase = isClaimWindowActive
     ? {
         Playing: {
@@ -316,14 +326,14 @@ export function PlayingPhasePresentation({
                 incomingFromSeat={animations.incomingFromSeat}
                 onAbsorbIncoming={() => playing.setStagedIncomingTile(null)}
                 onRemoveOutgoing={(tileId) => toggleTile(tileId)}
-                onCommitPass={() => {}}
-                onCommitCall={() => {}}
+                onCommitPass={handleProceedCallWindow}
+                onCommitCall={handleProceedCallWindow}
                 onCommitDiscard={handleCommitDiscard}
-                canCommitPass={false}
-                canCommitCall={false}
+                canCommitPass={canCommitPass}
+                canCommitCall={canCommitCall}
                 canCommitDiscard={canCommitDiscard}
                 isProcessing={playing.isProcessing}
-                showActionButtons={false}
+                showActionButtons={isClaimWindowActive}
               />
             }
             rack={

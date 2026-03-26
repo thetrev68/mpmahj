@@ -353,7 +353,7 @@ describe('PlayingPhasePresentation', () => {
     render(
       <PlayingPhasePresentation
         {...props}
-        callWindow={{ callWindow: { tile: 9, discardedBy: 'East' } }}
+        callWindow={{ callWindow: { tile: 9, discardedBy: 'East', hasResponded: false } }}
         claimCandidate={{
           state: 'valid',
           label: 'Pung ready',
@@ -432,7 +432,7 @@ describe('PlayingPhasePresentation', () => {
         {...props}
         gameState={{ ...props.gameState, discard_pile: duplicateDiscardPile }}
         playing={{ ...props.playing, mostRecentDiscard: 18 }}
-        callWindow={{ callWindow: { tile: 18, discardedBy: 'West' } }}
+        callWindow={{ callWindow: { tile: 18, discardedBy: 'West', hasResponded: false } }}
       />
     );
 
@@ -454,7 +454,7 @@ describe('PlayingPhasePresentation', () => {
         {...props}
         gameState={{ ...props.gameState, discard_pile: duplicateDiscardPile }}
         playing={{ ...props.playing, mostRecentDiscard: 18 }}
-        callWindow={{ callWindow: { tile: 18, discardedBy: 'West' } }}
+        callWindow={{ callWindow: { tile: 18, discardedBy: 'West', hasResponded: false } }}
         hintSystem={{
           ...props.hintSystem,
           hintSettings: { ...props.hintSystem.hintSettings, sortDiscards: true },
@@ -486,7 +486,7 @@ describe('PlayingPhasePresentation', () => {
     render(
       <PlayingPhasePresentation
         {...props}
-        callWindow={{ callWindow: { tile: 9, discardedBy: 'East' } }}
+        callWindow={{ callWindow: { tile: 9, discardedBy: 'East', hasResponded: false } }}
       />
     );
 
@@ -499,7 +499,7 @@ describe('PlayingPhasePresentation', () => {
     render(
       <PlayingPhasePresentation
         {...props}
-        callWindow={{ callWindow: { tile: 9, discardedBy: 'East' } }}
+        callWindow={{ callWindow: { tile: 9, discardedBy: 'East', hasResponded: false } }}
       />
     );
 
@@ -507,6 +507,107 @@ describe('PlayingPhasePresentation', () => {
       'data-can-declare-mahjong',
       'false'
     );
+  });
+
+  describe('call window StagingStrip buttons (VR-010)', () => {
+    function makeCallWindowProps(overrides?: Partial<PresentationProps>) {
+      const base = createBaseProps();
+      return {
+        ...base,
+        callWindow: { callWindow: { tile: 9, discardedBy: 'East' as const, hasResponded: false } },
+        canProceedCallWindow: true,
+        isDiscardingStage: false,
+        isMyTurn: false,
+        ...overrides,
+      };
+    }
+
+    it('hides action buttons when no call window is active', () => {
+      const props = createBaseProps();
+      render(<PlayingPhasePresentation {...props} />);
+      expect(screen.queryByTestId('staging-action-buttons')).not.toBeInTheDocument();
+    });
+
+    it('shows action buttons when call window is active', () => {
+      render(<PlayingPhasePresentation {...makeCallWindowProps()} />);
+      expect(screen.getByTestId('staging-action-buttons')).toBeInTheDocument();
+    });
+
+    it('enables PASS button when call window active and no tiles are selected', () => {
+      render(<PlayingPhasePresentation {...makeCallWindowProps({ selectedIds: [] })} />);
+      expect(screen.getByTestId('staging-pass-button')).not.toBeDisabled();
+    });
+
+    it('disables PASS button when tiles are selected', () => {
+      render(
+        <PlayingPhasePresentation {...makeCallWindowProps({ selectedIds: ['9-0', '9-1'] })} />
+      );
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+    });
+
+    it('enables CALL button when 2 or more tiles are selected', () => {
+      render(
+        <PlayingPhasePresentation {...makeCallWindowProps({ selectedIds: ['9-0', '9-1'] })} />
+      );
+      expect(screen.getByTestId('staging-call-button')).not.toBeDisabled();
+    });
+
+    it('disables CALL button when fewer than 2 tiles are selected', () => {
+      render(<PlayingPhasePresentation {...makeCallWindowProps({ selectedIds: ['9-0'] })} />);
+      expect(screen.getByTestId('staging-call-button')).toBeDisabled();
+    });
+
+    it('disables CALL button when 0 tiles are selected', () => {
+      render(<PlayingPhasePresentation {...makeCallWindowProps({ selectedIds: [] })} />);
+      expect(screen.getByTestId('staging-call-button')).toBeDisabled();
+    });
+
+    it('calls handleProceedCallWindow when CALL button is clicked', () => {
+      const handleProceedCallWindow = vi.fn();
+      render(
+        <PlayingPhasePresentation
+          {...makeCallWindowProps({ selectedIds: ['9-0', '9-1'], handleProceedCallWindow })}
+        />
+      );
+      fireEvent.click(screen.getByTestId('staging-call-button'));
+      expect(handleProceedCallWindow).toHaveBeenCalledTimes(1);
+    });
+
+    it('calls handleProceedCallWindow when PASS button is clicked', () => {
+      const handleProceedCallWindow = vi.fn();
+      render(
+        <PlayingPhasePresentation
+          {...makeCallWindowProps({ selectedIds: [], handleProceedCallWindow })}
+        />
+      );
+      fireEvent.click(screen.getByTestId('staging-pass-button'));
+      expect(handleProceedCallWindow).toHaveBeenCalledTimes(1);
+    });
+
+    it('disables CALL and PASS buttons when hasResponded is true', () => {
+      const props = {
+        ...makeCallWindowProps({ selectedIds: [] }),
+        callWindow: {
+          callWindow: { tile: 9, discardedBy: 'East' as const, hasResponded: true },
+        },
+      };
+      render(<PlayingPhasePresentation {...props} />);
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+      expect(screen.getByTestId('staging-call-button')).toBeDisabled();
+    });
+
+    it('disables CALL and PASS buttons when isProcessing is true', () => {
+      render(
+        <PlayingPhasePresentation
+          {...makeCallWindowProps({
+            selectedIds: ['9-0', '9-1'],
+            playing: { ...createBaseProps().playing, isProcessing: true },
+          })}
+        />
+      );
+      expect(screen.getByTestId('staging-call-button')).toBeDisabled();
+      expect(screen.getByTestId('staging-pass-button')).toBeDisabled();
+    });
   });
 
   it('opens the mobile hints sheet from the top controls', () => {

@@ -45,11 +45,10 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
   - File: `apps/client/src/components/game/phases/CharlestonPhase.tsx` (pass animation layer)
   - Context: intentionally deferred; moved from inline code TODO to centralized backlog tracking.
 
-- [ ] Wire staged-strip call commit integration (`VR-010`) after call flow migration.
-  - File: `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` (`onCommitCall`)
-  - Current state: `StagingStrip` still receives `onCommitCall={() => {}}` and `canCommitCall={false}`,
-    so the staged-strip call-commit path remains inert.
-  - Context: intentionally deferred; moved from inline code TODO to centralized backlog tracking.
+- [x] Wire staged-strip call commit integration (`VR-010`) after call flow migration.
+  - Completed 2026-03-26. Wired `onCommitCall`/`onCommitPass` to `handleProceedCallWindow`,
+    computed `canCommitCall`/`canCommitPass` guards, enabled `showActionButtons` during call windows.
+    Threaded `hasResponded` through `presentationCallWindow` slice. 10 new tests added.
 
 - [ ] Implement full IOU chain resolution for all-blind-pass deadlock.
   - File: `crates/mahjong_core/src/table/handlers/charleston.rs` (`resolve_iou_and_complete_charleston`)
