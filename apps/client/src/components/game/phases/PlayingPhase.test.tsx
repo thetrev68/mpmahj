@@ -467,6 +467,101 @@ describe('PlayingPhase', () => {
 
       expect(screen.getByTestId('proceed-button')).toBeDisabled();
     });
+
+    it('disables Proceed in call window after the local player has responded', () => {
+      const turnStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
+      gameState = {
+        ...gameStates.playingCallWindow,
+        your_seat: 'South',
+      } as GameStateSnapshot;
+
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 10,
+          timerStart: Date.now(),
+        },
+      });
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      expect(screen.getByTestId('proceed-button')).toBeEnabled();
+
+      act(() => {
+        useGameUIStore.getState().dispatch({
+          type: 'MARK_CALL_WINDOW_RESPONDED',
+          message: 'Passed',
+        });
+      });
+
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    });
+
+    it('disables Mahjong in call window after the local player has responded', () => {
+      const turnStage: TurnStage = {
+        CallWindow: {
+          tile: 5,
+          discarded_by: 'East',
+          can_act: ['South'],
+          pending_intents: [],
+          timer: 10,
+        },
+      };
+      gameState = {
+        ...gameStates.playingCallWindow,
+        your_seat: 'South',
+        your_hand: [5, 6, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
+      } as GameStateSnapshot;
+
+      useGameUIStore.getState().dispatch({
+        type: 'OPEN_CALL_WINDOW',
+        params: {
+          tile: 5,
+          discardedBy: 'East',
+          canCall: ['South'],
+          timerDuration: 10,
+          timerStart: Date.now(),
+        },
+      });
+
+      render(
+        <PlayingPhase
+          gameState={gameState}
+          turnStage={turnStage}
+          currentTurn="East"
+          sendCommand={mockSendCommand}
+        />
+      );
+
+      expect(screen.getByTestId('declare-mahjong-button')).toBeEnabled();
+
+      act(() => {
+        useGameUIStore.getState().dispatch({
+          type: 'MARK_CALL_WINDOW_RESPONDED',
+          message: 'Declared intent',
+        });
+      });
+
+      expect(screen.getByTestId('declare-mahjong-button')).toBeDisabled();
+    });
   });
 
   // ============================================================================

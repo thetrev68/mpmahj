@@ -103,13 +103,15 @@ export function PlayingPhase({
     sendCommand,
   });
   const isCallWindowActive = callWindow.callWindow !== null;
+  const canProceedCallWindow =
+    callWindow.callWindow !== null && !callWindow.callWindow.hasResponded;
 
   const canDeclareMahjong =
     isDiscardingStage &&
     gameState.your_hand.length === 14 &&
     !mahjong.deadHandPlayers.has(gameState.your_seat);
   const canDeclareMahjongCall =
-    isCallWindowActive &&
+    canProceedCallWindow &&
     gameState.your_hand.length === 13 &&
     !mahjong.deadHandPlayers.has(gameState.your_seat);
 
@@ -135,8 +137,8 @@ export function PlayingPhase({
     () =>
       isDiscardingStage || isCallWindowActive
         ? selectedIds
-            .map((id) => handTileInstances.find((instance) => instance.id === id)?.tile)
-            .filter((tile): tile is Tile => tile !== undefined)
+          .map((id) => handTileInstances.find((instance) => instance.id === id)?.tile)
+          .filter((tile): tile is Tile => tile !== undefined)
         : [],
     [handTileInstances, isCallWindowActive, isDiscardingStage, selectedIds]
   );
@@ -280,7 +282,7 @@ export function PlayingPhase({
         claimCandidate={claimCandidate}
         canDeclareMahjong={canDeclareMahjong}
         canDeclareMahjongCall={canDeclareMahjongCall}
-        canProceedCallWindow={isCallWindowActive}
+        canProceedCallWindow={canProceedCallWindow}
         clearSelection={clearSelection}
         combinedHighlightedIds={combinedHighlightedIds}
         currentTurn={currentTurn}
