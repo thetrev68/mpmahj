@@ -287,8 +287,10 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleCallWindowOpened(event, { yourSeat: 'South' });
 
-      expect(result.uiActions).toHaveLength(1);
-      expect(result.uiActions[0]).toMatchObject({
+      // Eligible players receive both CLEAR_PENDING_DRAW_RETRY and OPEN_CALL_WINDOW.
+      expect(result.uiActions).toHaveLength(2);
+      expect(result.uiActions[0]).toEqual({ type: 'CLEAR_PENDING_DRAW_RETRY' });
+      expect(result.uiActions[1]).toMatchObject({
         type: 'OPEN_CALL_WINDOW',
         params: {
           tile: 12,
@@ -314,7 +316,10 @@ describe('Playing Phase Event Handlers', () => {
 
       const result = handleCallWindowOpened(event, { yourSeat: 'North' });
 
-      expect(result.uiActions).toHaveLength(0);
+      // Non-eligible players still receive CLEAR_PENDING_DRAW_RETRY to cancel
+      // any in-flight auto-draw, but do NOT receive OPEN_CALL_WINDOW.
+      expect(result.uiActions).toHaveLength(1);
+      expect(result.uiActions[0]).toEqual({ type: 'CLEAR_PENDING_DRAW_RETRY' });
       expect(result.sideEffects).toHaveLength(0);
     });
   });

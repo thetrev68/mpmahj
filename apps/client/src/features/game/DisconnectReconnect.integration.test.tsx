@@ -402,4 +402,86 @@ describe('US-037: Disconnect / Reconnect (Integration)', () => {
     expect(screen.getAllByTestId(/^discard-pool-tile-/)).toHaveLength(4);
     expect(screen.getByTestId('discard-pool-tile-3')).not.toHaveAttribute('style');
   });
+
+  test('handles 3 rapid reconnect cycles without stale UI state', async () => {
+    const { instances } = setupWebSocketMock();
+
+    renderWithProviders(<GameBoard initialState={gameStates.midGameCharleston} />);
+
+    const firstSocket = instances[0];
+    expect(firstSocket).toBeDefined();
+
+    // Cycle 1: open → AuthSuccess → close
+    act(() => {
+      firstSocket.triggerOpen();
+      firstSocket.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-west',
+          display_name: 'WestPlayer',
+          session_token: 'token-cycle-1',
+          seat: 'West',
+        },
+      });
+    });
+
+    act(() => {
+      firstSocket.triggerClose(1006, 'network drop');
+    });
+
+    // Advance timers to trigger reconnect
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    // Cycle 2: open → AuthSuccess → close
+    const sock2 = instances[instances.length - 1];
+    act(() => {
+      sock2.triggerOpen();
+      sock2.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-west',
+          display_name: 'WestPlayer',
+          session_token: 'token-cycle-1',
+          seat: 'West',
+        },
+      });
+    });
+
+    act(() => {
+      sock2.triggerClose(1006, 'network drop');
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    // Cycle 3: open → AuthSuccess → StateSnapshot
+    const sock3 = instances[instances.length - 1];
+    act(() => {
+      sock3.triggerOpen();
+      sock3.triggerMessage({
+        kind: 'AuthSuccess',
+        payload: {
+          player_id: 'player-west',
+          display_name: 'WestPlayer',
+          session_token: 'token-cycle-1',
+          seat: 'West',
+        },
+      });
+      sock3.triggerMessage({
+        kind: 'StateSnapshot',
+        payload: { snapshot: gameStates.midGameCharleston },
+      });
+    });
+
+    // After 3rd reconnect resolves, UI should be clean
+    expect(screen.queryByTestId('disconnect-interaction-lock')).not.toBeInTheDocument();
+    expect(screen.getByTestId('charleston-tracker')).toBeInTheDocument();
+    expect(screen.queryByTestId('connection-status-banner')).not.toBeInTheDocument();
+
+    // Selection counter should be at 0 (no stale selections from prior cycles)
+    expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
+  });
 });

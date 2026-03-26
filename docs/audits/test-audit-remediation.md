@@ -76,25 +76,41 @@ interaction coverage. This plan tracks remediation work.
 
 - **File:** `apps/client/src/features/game/DrawTile.integration.test.tsx`
 - **Problem:** DrawTile tests assume no call window is active.
-- **Status:** 🔴 Not Started
+- **Tests added (2 new in `describe('Call window gating')`):**
+  - [x] `CallWindowOpened` before 500ms auto-draw fires → `DrawTile` NOT sent
+  - [x] Draw retry in flight, `CallWindowOpened` arrives → retries cancelled
+- **Bug fixed:** `handleCallWindowOpened` in `publicEventHandlers.playing.ts` now dispatches
+  `CLEAR_PENDING_DRAW_RETRY` unconditionally (eligible and non-eligible branches). Previously,
+  the auto-draw timer continued firing through an active call window because only the UI store
+  was updated, leaving `isDrawingStage` true in the server snapshot.
+- **Status:** ✅ Complete
 
 ### P1-2: Multi-phase Charleston sequence
 
-- **File:** New or extend `Charleston.integration.test.tsx`
+- **File:** `apps/client/src/features/game/Charleston.integration.test.tsx`
 - **Problem:** Each phase tested in isolation; state leakage between phases untested.
-- **Status:** 🔴 Not Started
+- **Tests added (3 new in `describe('Multi-phase transition: state leakage prevention')`):**
+  - [x] Selection counter resets to `0/3` on `CharlestonPhaseChanged`
+  - [x] Opponent staging tiles cleared when phase advances
+  - [x] Per-seat ready indicators reset to `•` on phase change
+- **Status:** ✅ Complete
 
 ### P1-3: Blind pass `forward_incoming_count` validation
 
-- **File:** `CharlestonFirstRight.integration.test.tsx` or new
-- **Problem:** `forward_incoming_count` field completely untested in integration.
-- **Status:** 🔴 Not Started
+- **File:** `apps/client/src/features/game/CharlestonFirstLeft.integration.test.tsx`
+- **Problem:** Boundary case of `forward_incoming_count = 3` (all blind tiles forwarded) was missing.
+- **Tests added (1 new):**
+  - [x] Forward all 3 blind incoming tiles: `forward_incoming_count: 3`, `from_hand: [...]` with 3 rack tiles
+- **Note:** `forward_incoming_count` 0/1/2 were already covered; the `= 3` edge case was the gap.
+- **Status:** ✅ Complete
 
 ### P1-4: Rapid reconnect cascade (3+ cycles)
 
-- **File:** `DisconnectReconnect.integration.test.tsx`
+- **File:** `apps/client/src/features/game/DisconnectReconnect.integration.test.tsx`
 - **Problem:** Only 1 reconnect cycle tested. Flaky networks cause rapid cycles.
-- **Status:** 🔴 Not Started
+- **Tests added (1 new):**
+  - [x] 3 rapid disconnect/reconnect cycles — clean UI state after each, correct auth on final cycle
+- **Status:** ✅ Complete
 
 ---
 
@@ -144,3 +160,7 @@ interaction coverage. This plan tracks remediation work.
 | 2026-03-26 | P0-1 | Expanded useMahjongDeclaration: 2 → 16 tests  | All handler paths + edge cases         |
 | 2026-03-26 | P0-2 | Added reconnect-during-intent tests + bug fix | Store not clearing on snapshot — fixed |
 | 2026-03-26 | P0-3 | Added call window + discard collision tests   | Existing behavior correct, now guarded |
+| 2026-03-26 | P1-1 | Auto-draw gating: 2 tests + bug fix           | `CLEAR_PENDING_DRAW_RETRY` on CallWindowOpened |
+| 2026-03-26 | P1-2 | Multi-phase Charleston state leakage: 3 tests | Selection/staging/ready-indicators reset |
+| 2026-03-26 | P1-3 | Blind pass forward_incoming_count=3: 1 test   | Missing edge case covered |
+| 2026-03-26 | P1-4 | Rapid reconnect cascade: 1 test               | 3-cycle resilience verified |

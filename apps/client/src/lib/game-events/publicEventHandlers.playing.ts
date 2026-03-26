@@ -137,6 +137,7 @@ export function handleCallWindowOpened(
     return {
       stateUpdates: [],
       uiActions: [
+        { type: 'CLEAR_PENDING_DRAW_RETRY' },
         {
           type: 'OPEN_CALL_WINDOW',
           params: {
@@ -154,7 +155,7 @@ export function handleCallWindowOpened(
 
   return {
     stateUpdates: [],
-    uiActions: [],
+    uiActions: [{ type: 'CLEAR_PENDING_DRAW_RETRY' }],
     sideEffects: [],
   };
 }

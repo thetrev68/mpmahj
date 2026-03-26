@@ -194,6 +194,81 @@ describe('VR-013: Charleston Direction Banner + Release Hardening', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // Multi-phase transition: state leakage prevention
+  // ---------------------------------------------------------------------------
+  describe('Multi-phase transition: state leakage prevention', () => {
+    const getTileByValue = (value: number) =>
+      screen.getAllByTestId(new RegExp(`^tile-${value}-`))[0];
+
+    test('resets selection counter when CharlestonPhaseChanged event advances stage', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstRight} ws={mockWs} />);
+
+      // Select 2 tiles
+      await act(async () => {
+        getTileByValue(0).click();
+        getTileByValue(1).click();
+      });
+
+      // Verify counter is 2/3
+      expect(screen.getByTestId('selection-counter')).toHaveTextContent('2/3');
+
+      // Send CharlestonPhaseChanged to FirstAcross
+      await sendPublic({ CharlestonPhaseChanged: { stage: 'FirstAcross' } });
+
+      // Counter resets to 0/3
+      await waitFor(() => {
+        expect(screen.getByTestId('selection-counter')).toHaveTextContent('0/3');
+      });
+
+      // Direction now shows Across
+      expect(screen.getByTestId('charleston-direction')).toHaveTextContent(/across/i);
+
+      // Proceed button is disabled
+      expect(screen.getByTestId('proceed-button')).toBeDisabled();
+    });
+
+    test('clears opponent staging when phase advances', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstRight} ws={mockWs} />);
+
+      // Opponent stages 3 tiles
+      await sendPublic({ PlayerStagedTile: { player: 'North', count: 3 } });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('opponent-staging-north').children).toHaveLength(3);
+      });
+
+      // TilesPassing then CharlestonPhaseChanged
+      await sendPublic({ TilesPassing: { direction: 'Right' } });
+      await sendPublic({ CharlestonPhaseChanged: { stage: 'FirstAcross' } });
+
+      // Opponent staging should be cleared
+      await waitFor(() => {
+        expect(screen.queryByTestId('opponent-staging-north')).not.toBeInTheDocument();
+      });
+    });
+
+    test('ready indicators reset when CharlestonPhaseChanged fires', async () => {
+      renderWithProviders(<GameBoard initialState={gameStates.charlestonFirstRight} ws={mockWs} />);
+
+      // East becomes ready
+      await sendPublic({ PlayerReadyForPass: { player: 'East' } });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('ready-indicator-east')).toHaveTextContent('E✓');
+      });
+
+      // Phase advances
+      await sendPublic({ CharlestonPhaseChanged: { stage: 'FirstAcross' } });
+
+      // East indicator goes back to not-ready
+      await waitFor(() => {
+        expect(screen.getByTestId('ready-indicator-east')).not.toHaveTextContent('✓');
+      });
+      expect(screen.getByTestId('ready-indicator-east')).toHaveTextContent('•');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // T-4: Reconnect during blind staging — no duplicate tiles (AC-6)
   //
   // Simulates a real disconnect/reconnect/auth/snapshot/re-delivery cycle.

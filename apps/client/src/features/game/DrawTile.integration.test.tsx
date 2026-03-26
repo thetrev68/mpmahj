@@ -243,6 +243,107 @@ describe('US-009: Drawing a Tile (Integration)', () => {
     expect(mockWs.send).toHaveBeenCalledTimes(4); // No additional calls
   });
 
+  describe('Call window gating', () => {
+    it('does not send DrawTile when CallWindowOpened arrives before auto-draw timer', async () => {
+      const mockWs = createMockWebSocket();
+      const initialState = fixtures.gameStates.playingDrawing;
+
+      render(<GameBoard initialState={initialState} ws={mockWs} />);
+      mockWs.send.mockClear();
+
+      // Advance 200ms — before the 500ms auto-draw fires
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+
+      // CallWindowOpened arrives before the auto-draw timer fires
+      act(() => {
+        mockWs.triggerMessage(
+          JSON.stringify({
+            kind: 'Event',
+            payload: {
+              event: {
+                Public: {
+                  CallWindowOpened: {
+                    tile: 5,
+                    discarded_by: 'East',
+                    can_call: ['South'],
+                    timer: 10,
+                    started_at_ms: Date.now(),
+                    timer_mode: 'Standard',
+                  },
+                },
+              },
+            },
+          })
+        );
+      });
+
+      // Advance 500ms more — past the original 500ms threshold from mount
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      // DrawTile should NOT have been sent
+      const drawTileSent = mockWs.send.mock.calls.some(
+        (call) => JSON.parse(call[0] as string).payload?.command?.DrawTile
+      );
+      expect(drawTileSent).toBe(false);
+    });
+
+    it('cancels draw retry when CallWindowOpened arrives during retry wait', async () => {
+      const mockWs = createMockWebSocket();
+      const initialState = fixtures.gameStates.playingDrawing;
+
+      render(<GameBoard initialState={initialState} ws={mockWs} />);
+      mockWs.send.mockClear();
+
+      // Fire the initial auto-draw
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      // Advance 3000ms — halfway through 5s retry window, no retry yet
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      // CallWindowOpened arrives during the retry wait
+      act(() => {
+        mockWs.triggerMessage(
+          JSON.stringify({
+            kind: 'Event',
+            payload: {
+              event: {
+                Public: {
+                  CallWindowOpened: {
+                    tile: 5,
+                    discarded_by: 'East',
+                    can_call: ['South'],
+                    timer: 10,
+                    started_at_ms: Date.now(),
+                    timer_mode: 'Standard',
+                  },
+                },
+              },
+            },
+          })
+        );
+      });
+
+      // Advance 5000ms more — past the retry threshold
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+
+      // Only the initial draw should have been sent — no retry
+      const drawTileCalls = mockWs.send.mock.calls.filter(
+        (call) => JSON.parse(call[0] as string).payload?.command?.DrawTile
+      );
+      expect(drawTileCalls).toHaveLength(1);
+    });
+  });
+
   it('clears retry state when TileDrawnPrivate is received', async () => {
     const mockWs = createMockWebSocket();
     const initialState = fixtures.gameStates.playingDrawing;

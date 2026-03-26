@@ -312,6 +312,34 @@ describe('VR-010: Charleston First Left blind incoming behavior', () => {
     expect(getRackTileCount()).toBe(gameStates.charlestonFirstLeft.players[1].tile_count);
   });
 
+  test('commits with forward_incoming_count 3 when all incoming blind tiles are forwarded', async () => {
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.charlestonFirstLeft} ws={mockWs} />
+    );
+
+    // Stage 3 blind incoming tiles
+    await stageBlindIncoming([3, 14, 20]);
+
+    // Do NOT absorb any incoming tiles — forward all 3.
+    // With 3 staged incoming tiles remaining and 0 selected from hand:
+    //   selectedIds.length (0) + stagedIncomingTiles.length (3) === 3 → canCommitPass = true
+    // from_hand = [], forward_incoming_count = 3
+    expect(screen.getByTestId('proceed-button')).toBeEnabled();
+    await user.click(screen.getByTestId('proceed-button'));
+
+    const expectedCommand: GameCommand = {
+      CommitCharlestonPass: {
+        player: 'South',
+        from_hand: [],
+        forward_incoming_count: 3,
+      },
+    };
+
+    expect(mockWs.send).toHaveBeenCalledWith(
+      JSON.stringify({ kind: 'Command', payload: { command: expectedCommand } })
+    );
+  });
+
   test('AC-13: FirstAcross → FirstLeft: TilesReceived absorbs to rack before blind staging', async () => {
     // US-058 AC-1 + AC-13: the server emits TilesReceived (not IncomingTilesStaged) for
     // the FirstAcross exchange. Those tiles arrive directly into the rack, bringing it back
