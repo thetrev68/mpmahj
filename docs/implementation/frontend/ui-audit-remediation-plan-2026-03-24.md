@@ -1,8 +1,33 @@
 # UI Audit Remediation Plan — 2026-03-24
 
-**Status:** Proposed
+**Status:** Completed
 **Input audit:** [ui-audit-2026-03-22.md](C:/Repos/mpmahj/docs/implementation/frontend/ui-audit-2026-03-22.md)
 **Purpose:** convert the audit into execution-ready work without forcing every item through a full user-story cycle
+
+---
+
+## Closeout
+
+This plan has been executed.
+
+Completed deliverables:
+
+1. Batch A implemented via [US-084-charleston-cta-and-right-rail-surface-recovery.md](C:/Repos/mpmahj/docs/implementation/frontend/user-stories/US-084-charleston-cta-and-right-rail-surface-recovery.md)
+2. Batch B implemented via [US-085-board-width-math-and-fixed-positioning-recovery.md](C:/Repos/mpmahj/docs/implementation/frontend/user-stories/US-085-board-width-math-and-fixed-positioning-recovery.md)
+3. Batch C specified in [charleston-board-geometry-compact-spec-2026-03-24.md](C:/Repos/mpmahj/docs/implementation/frontend/charleston-board-geometry-compact-spec-2026-03-24.md) and implemented via [US-086-charleston-board-region-ownership-and-chrome-stacking.md](C:/Repos/mpmahj/docs/implementation/frontend/user-stories/US-086-charleston-board-region-ownership-and-chrome-stacking.md)
+
+Current verification status:
+
+- targeted frontend tests for the remediation files pass
+- `npx tsc --noEmit` passes
+- no remaining implementation work from audit items 1-10, 12-20, or 21 is tracked by this plan
+
+Remaining non-blocking follow-up:
+
+- Audit item 11 remains optional visual polish work, as originally captured in Batch D
+- Named screenshot-state evidence is not stored in this document set; visual signoff should be treated as complete only if captured elsewhere
+
+This document is now a historical execution record rather than an active plan.
 
 ---
 
@@ -80,7 +105,7 @@ Working rule from this point:
 
 ---
 
-## Proposed Delivery Batches
+## Delivery Batches
 
 ### Batch A — Action Hierarchy and Rail Surface Cleanup
 
@@ -199,13 +224,13 @@ Each batch should list exactly which of those states must be checked before call
 
 ---
 
-## Next Practical Step
+## Outcome
 
-Implement in this order:
+The execution order proposed here was followed in substance:
 
-1. Batch A
-2. Batch B
-3. Write the Batch C compact spec
-4. Only then decide whether Batch C becomes one refactor story or several small implementation tickets
+1. Batch A implementation
+2. Batch B implementation
+3. Batch C compact spec
+4. Batch C implementation
 
-This keeps the obvious bugs moving while preventing another round of vague layout work that looks complete in code but fails on screen.
+That sequence produced the expected result: the audit was closed with explicit board-region ownership, CTA cleanup, rail cleanup, corrected board-local positioning, and documented z-index layering instead of another round of local layout patches.

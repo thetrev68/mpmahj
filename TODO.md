@@ -1,7 +1,13 @@
 # Single TODO List (Code-Verified)
 
-Last updated: 2026-03-14
+Last updated: 2026-03-26
 Source of truth for status: executable checks + code inspection (not legacy markdown plans).
+
+Relevance review on 2026-03-26:
+
+- All current backlog items below are still relevant.
+- No completed UI-audit remediation work remains on this list.
+- Older placeholder follow-up around rack auto-sort / board sound-settings chrome is no longer a TODO item here; that work was superseded by completed stories.
 
 ## Current Health
 
@@ -16,13 +22,24 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
 
 ## P2 - Product/Infra Debt (Not Blocking Core Playability)
 
-- [ ] Fix server to set `can_declare_mahjong = true` during Charleston when the player has Mahjong.
-  - Context: Declaring Mahjong during Charleston is a legal NMJL action. The server currently
-    keeps `can_declare_mahjong = false` for all Charleston sub-stages, which is a bug. The
-    frontend Mahjong button (added by `US-051`) is already wired to `canDeclareMahjong`; once
-    this server fix lands the button will enable automatically.
-  - Likely file: `crates/mahjong_core/src/flow/charleston/` — wherever `can_declare_mahjong`
-    is computed for the Charleston phase player view.
+- [ ] Fix server to expose Charleston Mahjong availability with phase-boundary rules.
+  - Context: Declaring Mahjong during Charleston is not globally available at all times. The
+    important rule nuance is that the Charleston cannot be interrupted mid-pass. East may declare
+    an Earthly Hand only after a Charleston phase completes and only if the hand is still winning
+    at that boundary.
+  - Clarification:
+    - Heavenly Hand is the pre-Charleston case and is already handled before Charleston begins.
+    - Earthly Hand is the Charleston case for East after receiving tiles.
+    - If East receives winning tiles during an in-progress Charleston pass, East must still finish
+      that pass. The Charleston cannot be stopped mid-phase to declare Mahjong.
+    - Availability should therefore be tied to legal Charleston phase boundaries, not exposed as a
+      blanket "true during Charleston when hand wins" flag.
+  - Current gap: the server still treats `DeclareMahjong` as a Playing-only validation path, and
+    the frontend Charleston Mahjong affordance derives enablement locally instead of from a
+    server-authoritative Charleston capability signal.
+  - Likely files:
+    - `crates/mahjong_core/src/table/validation.rs`
+    - any snapshot/player-view code that exposes Charleston-phase Mahjong capability to the client
 
 - [ ] Implement courtesy pass tile exchange animations (`US-007`) with server-timed sequencing.
   - File: `apps/client/src/components/game/phases/CharlestonPhase.tsx` (pass animation layer)
@@ -30,13 +47,15 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
 
 - [ ] Wire staged-strip call commit integration (`VR-010`) after call flow migration.
   - File: `apps/client/src/components/game/phases/playing-phase/PlayingPhasePresentation.tsx` (`onCommitCall`)
+  - Current state: `StagingStrip` still receives `onCommitCall={() => {}}` and `canCommitCall={false}`,
+    so the staged-strip call-commit path remains inert.
   - Context: intentionally deferred; moved from inline code TODO to centralized backlog tracking.
 
 - [ ] Implement full IOU chain resolution for all-blind-pass deadlock.
   - File: `crates/mahjong_core/src/table/handlers/charleston.rs` (`resolve_iou_and_complete_charleston`)
   - File: `crates/mahjong_core/src/flow/charleston/state.rs` (`player_with_max_iou_debt`, `has_iou_debts`)
-  - Current behavior: server collapses both IOU cases (players have tiles / no tiles) into immediate
-    `CharlestonComplete`. Scaffolding for debt tracking exists but is never used.
+  - Current behavior: server still collapses the IOU path into immediate `CharlestonComplete`.
+    Scaffolding for debt tracking exists but is not used for an actual settlement chain.
   - Rules require: player with most tiles passes 1–2 first, declares "I.O.U.", chain proceeds, first
     passer settles debts at end. Only cease immediately if _no one_ has any tiles to pass.
   - Edge case: requires all 4 players to want a full blind pass simultaneously.
@@ -45,7 +64,8 @@ Note: `npm run check:all` does not run the production build (`vite build`). Run
   - File: `apps/client/src/hooks/useSoundEffects.ts` (line 128 — "For now, use a simple beep tone")
   - `SoundEffect` type (line 29) defines 7 variants but event handlers dispatch at least 5 others:
     `'game-draw'`, `'mahjong-win'`, `'dead-hand-penalty'`, `'tile-place'`, `'undo-whoosh'`.
-    These fall through silently because `playSound` receives `sound: string` at the call site.
+    These still flow through `eventSideEffects.ts` via `effect.sound as SoundEffect`, so unsupported
+    names bypass type safety and fall back inconsistently.
   - Fix requires: add real audio files to `/public/sounds/`, expand `SoundEffect` type, update
     the frequency map (or switch to `<audio>` element loading).
 
