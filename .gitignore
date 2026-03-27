@@ -63,6 +63,13 @@ apps/client/test-results/
 # OS
 Thumbs.db
 
+# One-off tools and generated reports
+cloc.exe
+tree.txt
+tree_scanner.py
+copy-transparent-tiles.sh
+patch.diff
+
 # Temporary processing files
 tmp/
 extracted_images/

@@ -1,6 +1,0 @@
-*** Begin Patch
-*** Update File: crates/mahjong_server/src/network/websocket/auth.rs
-@@
--// test
-+// test2
-*** End Patch

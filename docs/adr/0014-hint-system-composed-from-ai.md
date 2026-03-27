@@ -40,4 +40,4 @@ Implementation detail: the server may continue composing hints from cached analy
 ### Relationship to existing ADRs
 
 - This builds on ADR 0013: the server still owns analysis orchestration and hint composition.
-- This supersedes ADR 0014's prior verbosity-control decision. Verbosity is no longer a product feature or protocol concept.
+- This supersedes the prior verbosity-control decision (originally part of an earlier draft of this ADR). Verbosity is no longer a product feature or protocol concept.
