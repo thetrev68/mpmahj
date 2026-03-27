@@ -4,23 +4,23 @@
 
 ## Compliance Summary (audited 2026-03-27)
 
-| Section | Rule | Status | Notes |
-|---------|------|--------|-------|
-| §3.1 | Board Boundary | PASS | `square-board-container` with `aspect-square` + right-rail clearance via `calc(100vw-26rem)` |
-| §3.2 | Side Rack Perimeter | PASS | Grid-based column positioning in `CharlestonPhase.tsx`; `data-board-region` attributes on `OpponentRack` |
-| §3.3 | PlayerZone Regions | PASS | `staging-region`, `action-region`, `rack-region` all present with `data-board-region` attrs; stable across all Charleston states (verified in `CharlestonPhase.layout.test.tsx`) |
-| §3.4 | Rack Containment | PASS | `PlayerRack` uses ResizeObserver + scale transform; `data-board-region="player-rack-containment"` |
-| §3.5 | Staging Anchor | PASS | `origin-top-left` + `transformOrigin: 'top left'` on `StagingStrip`; `justify-start` in parent; verified in layout tests |
-| §3.6 | Action Region | PASS | Selection count inside `action-region` (not below rack); instruction text, Proceed, Mahjong all inside `ActionBar`; verified by layout test `within()` assertions |
-| §3.7 | Center-Board Clearance | PASS | `PlayerZone` has `min-h-60`; no vertical grow classes; grid prevents upward expansion |
-| §4.1 | Board-Local vs Viewport | PASS | All gameplay elements board-local; only leave overlay / dialogs / reconnect blocker are viewport-global |
-| §4.2 | Top Chrome Flow | PASS | Single `top-chrome-stack` flex-col container in `GameBoard.tsx`; board controls, Charleston tracker, WallCounter participate in shared flow |
-| §4.3 | Turn Indicator Anchoring | N/A | `TurnIndicator` component removed. Turn indication replaced by active rack ring (US-034). Dead-hand display handled by `DeadHandOverlay` modal. |
-| §5 | Theme / Surface | PASS | `PlayerZone` reads as one surface family; action-region has own panel; no transparent-overflow dependencies |
-| §6 | Z-Index Scale | PASS | Centralized `BOARD_LAYERS` in `boardLayers.ts` (z-0/z-10/z-20/z-30/z-50/z-60); all board components reference the scale |
-| §7 | Breakpoint Behavior | PASS | Named regions persist across breakpoints; rack compression via scale transform; no horizontal scroll |
-| §8 | Test Assertions | PASS | Unit tests verify all structural assertions (regions, containment, chrome stack, z-index mapping). Layout integration tests cover all four Charleston stages. |
-| §9 | Screenshot States | MANUAL | No automated pixel-level screenshot tests; e2e snapshot specs exist (`charleston-cta-and-rail-visual.spec.ts`, `board-layout-anchoring.spec.ts`) but require manual browser verification for the six listed states. |
+| Section | Rule                     | Status | Notes                                                                                                                                                                                                               |
+| ------- | ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §3.1    | Board Boundary           | PASS   | `square-board-container` with `aspect-square` + right-rail clearance via `calc(100vw-26rem)`                                                                                                                        |
+| §3.2    | Side Rack Perimeter      | PASS   | Grid-based column positioning in `CharlestonPhase.tsx`; `data-board-region` attributes on `OpponentRack`                                                                                                            |
+| §3.3    | PlayerZone Regions       | PASS   | `staging-region`, `action-region`, `rack-region` all present with `data-board-region` attrs; stable across all Charleston states (verified in `CharlestonPhase.layout.test.tsx`)                                    |
+| §3.4    | Rack Containment         | PASS   | `PlayerRack` uses ResizeObserver + scale transform; `data-board-region="player-rack-containment"`                                                                                                                   |
+| §3.5    | Staging Anchor           | PASS   | `origin-top-left` + `transformOrigin: 'top left'` on `StagingStrip`; `justify-start` in parent; verified in layout tests                                                                                            |
+| §3.6    | Action Region            | PASS   | Selection count inside `action-region` (not below rack); instruction text, Proceed, Mahjong all inside `ActionBar`; verified by layout test `within()` assertions                                                   |
+| §3.7    | Center-Board Clearance   | PASS   | `PlayerZone` has `min-h-60`; no vertical grow classes; grid prevents upward expansion                                                                                                                               |
+| §4.1    | Board-Local vs Viewport  | PASS   | All gameplay elements board-local; only leave overlay / dialogs / reconnect blocker are viewport-global                                                                                                             |
+| §4.2    | Top Chrome Flow          | PASS   | Single `top-chrome-stack` flex-col container in `GameBoard.tsx`; board controls, Charleston tracker, WallCounter participate in shared flow                                                                         |
+| §4.3    | Turn Indicator Anchoring | N/A    | `TurnIndicator` component removed. Turn indication replaced by active rack ring (US-034). Dead-hand display handled by `DeadHandOverlay` modal.                                                                     |
+| §5      | Theme / Surface          | PASS   | `PlayerZone` reads as one surface family; action-region has own panel; no transparent-overflow dependencies                                                                                                         |
+| §6      | Z-Index Scale            | PASS   | Centralized `BOARD_LAYERS` in `boardLayers.ts` (z-0/z-10/z-20/z-30/z-50/z-60); all board components reference the scale                                                                                             |
+| §7      | Breakpoint Behavior      | PASS   | Named regions persist across breakpoints; rack compression via scale transform; no horizontal scroll                                                                                                                |
+| §8      | Test Assertions          | PASS   | Unit tests verify all structural assertions (regions, containment, chrome stack, z-index mapping). Layout integration tests cover all four Charleston stages.                                                       |
+| §9      | Screenshot States        | MANUAL | No automated pixel-level screenshot tests; e2e snapshot specs exist (`charleston-cta-and-rail-visual.spec.ts`, `board-layout-anchoring.spec.ts`) but require manual browser verification for the six listed states. |
 
 **Input audit items:** 2, 3, 4, 8, 9, 10, 12, 13, 14, 20 from [ui-audit-2026-03-22.md](C:/Repos/mpmahj/docs/implementation/frontend/ui-audit-2026-03-22.md)
 **Related plan:** [ui-audit-remediation-plan-2026-03-24.md](C:/Repos/mpmahj/docs/implementation/frontend/ui-audit-remediation-plan-2026-03-24.md)

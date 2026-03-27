@@ -28,9 +28,9 @@ These files are tracked in git but should be gitignored:
 
 Untracked but also cluttering: `check-all.log` (173 KB), `checkall.log` (508 KB), `vitest.full.log` (457 KB) — these are gitignored by `*.log` but should be cleaned up locally.
 
-#### `.gitignore` gap — **OPEN**
+#### `.gitignore` gap — **DONE**
 
-`Cargo.lock` is gitignored, but for a binary/application project (which this is — it has a server), **Cargo.lock should be committed** per Rust convention. Libraries gitignore it; applications commit it.
+`Cargo.lock` is no longer gitignored. For a binary/application project like this one, `Cargo.lock` should be committed per Rust convention.
 
 ### Frontend Code Quality (Severity: Medium)
 
@@ -58,9 +58,9 @@ Several components are quite large (this may be justified by complexity, but wor
 - `CharlestonPhase.tsx` — 614 lines (was 570, grew during Phase 4 migration), with 3 `eslint-disable-next-line` `react-hooks/exhaustive-deps` suppressions
 - `PlayingPhasePresentation.tsx` — 486 lines (was 464)
 
-#### eslint-disable suppressions — **OPEN**
+#### eslint-disable suppressions — **DONE**
 
-3 exhaustive-deps suppressions in `CharlestonPhase.tsx:289, 310, 349`. These often indicate effects that should be restructured.
+The 3 `react-hooks/exhaustive-deps` suppressions in `CharlestonPhase.tsx` were removed. The affected effects now declare their actual stable dependencies instead of bypassing lint.
 
 ### Documentation Issues (Severity: Medium-High)
 
@@ -97,7 +97,7 @@ The Rust code is generally clean. Highlights:
 
 #### Minor concern
 
-- `room_actions.rs` has 18 `.clone()` calls, and `admin.rs` has 13. Some may be avoidable with borrowed references, but without deep auditing each call site, these could be necessary due to ownership constraints. — **OPEN**
+- `room_actions.rs` and `admin.rs` had the avoidable `.clone()` calls cleaned up. The remaining clones are mostly ownership-bound (`Arc` handles, session `player_id` extraction after releasing locks, and owned event payload fields), so no further cleanup is warranted without making the code less clear. — **WONTFIX**
 - Some large files: `command.rs` (653 lines), `scoring.rs` (638 lines), `validation.rs` (575 lines). These are acceptable for their complexity domains. — **WONTFIX** (acceptable)
 
 ### Test Quality (Severity: Low-Medium)
@@ -149,14 +149,14 @@ The Rust code is generally clean. Highlights:
 - Add a logging abstraction to replace raw `console.log` calls — **PARTIAL** (debug-gated now, no formal abstraction)
 - Separate user story specs from implementation verification reports — **OPEN**
 - Fix the broken knip compact reporter — **OPEN**
-- Commit `Cargo.lock` (it's an application, not a library) — **OPEN**
+- Commit `Cargo.lock` (it's an application, not a library) — **DONE**
 - Clean up stale npm scripts — **DONE**
 
 #### Low priority / ongoing
 
 - Trim module-level JSDoc blocks to only document non-obvious behavior — **OPEN**
-- Address the 3 `eslint-disable` suppressions in `CharlestonPhase` — **OPEN**
-- Audit `.clone()` usage in mahjong_server for unnecessary copies — **OPEN**
+- Address the 3 `eslint-disable` suppressions in `CharlestonPhase` — **DONE**
+- Audit `.clone()` usage in mahjong_server for unnecessary copies — **WONTFIX**
 
 ### Supplemental Findings (Frontend Agent)
 
@@ -280,13 +280,13 @@ Should be consolidated into a shared mock at `test/mocks/mediaQuery.ts`.
 
 All 4 agents have finished. Here's the consolidated picture:
 
-| **Area**          | **Grade** | **Key Issues**                                                                        | **Open / Total** |
-| ----------------- | --------- | ------------------------------------------------------------------------------------- | ----------------- |
-| **Rust backend**  | A-        | Clean code, zero clippy warnings. Minor: unwraps in worker.rs, large handler files    | 5 / 6            |
-| **Frontend code** | B         | Sound architecture, but console.log pollution, prop drilling                          | 5 / 11           |
-| **Documentation** | C+        | Heavy AI slop in user stories; stale docs now deleted                                 | 4 / 9            |
-| **Tests**         | B-        | Good coverage (1434 tests), but brittle CSS assertions, duplicated mocks              | 5 / 5            |
-| **Repo hygiene**  | C→B       | Root artifacts removed, stale scripts cleaned, .gitignore updated                     | 1 / 6            |
+| **Area**          | **Grade** | **Key Issues**                                                                     | **Open / Total** |
+| ----------------- | --------- | ---------------------------------------------------------------------------------- | ---------------- |
+| **Rust backend**  | A-        | Clean code, zero clippy warnings. Minor: unwraps in worker.rs, large handler files | 5 / 6            |
+| **Frontend code** | B         | Sound architecture, but console.log pollution, prop drilling                       | 5 / 11           |
+| **Documentation** | C+        | Heavy AI slop in user stories; stale docs now deleted                              | 4 / 9            |
+| **Tests**         | B-        | Good coverage (1434 tests), but brittle CSS assertions, duplicated mocks           | 5 / 5            |
+| **Repo hygiene**  | C→B       | Root artifacts removed, stale scripts cleaned, .gitignore updated                  | 1 / 6            |
 
 **Overall: 20 OPEN, 13 DONE, 3 PARTIAL, 4 WONTFIX** out of ~40 discrete findings.
 

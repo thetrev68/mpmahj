@@ -133,11 +133,10 @@ export function CharlestonPhase({
     setPlayingProcessing: () => {},
   });
 
-  // Optimistic pass submission flag — set when user clicks, cleared on stage change or error.
-  const [passSubmissionInFlight, setPassSubmissionInFlight] = useState(false);
-
-  // Courtesy pass: purely local (user action) state.
-  const [isPending, setIsPending] = useState(false);
+  // Stage-scoped optimistic flags. They auto-expire when the stage advances or when
+  // store state confirms the server responded, avoiding effect-driven local resets.
+  const [passSubmissionStage, setPassSubmissionStage] = useState<CharlestonStage | null>(null);
+  const [courtesyPendingStage, setCourtesyPendingStage] = useState<CharlestonStage | null>(null);
 
   // Vote retry refs
   const pendingVoteRef = useRef<CharlestonVote | null>(null);
@@ -178,7 +177,17 @@ export function CharlestonPhase({
   const isBlindPassStage = stage === 'FirstLeft' || stage === 'SecondRight';
   const isVotingStage = stage === 'VotingToContinue';
   const isCourtesyStage = stage === 'CourtesyAcross';
-  const isCourtesyWaiting = isCourtesyStage && (isPending || negotiationType === 'zero');
+  const hasRetryablePassError =
+    storeErrorMessage !== null &&
+    (/tile not in hand/i.test(storeErrorMessage) || /rate limit/i.test(storeErrorMessage));
+  const passSubmissionInFlight =
+    passSubmissionStage === stage && !storeHasSubmittedPass && !hasRetryablePassError;
+  const isCourtesyWaiting =
+    isCourtesyStage &&
+    ((courtesyPendingStage === stage &&
+      storeCourtesyAgreement === null &&
+      storeCourtesyMismatch === null) ||
+      negotiationType === 'zero');
   const isPassUiLocked = storeHasSubmittedPass || passSubmissionInFlight;
   const canDeclareMahjong =
     !isHistoricalView &&
@@ -266,7 +275,7 @@ export function CharlestonPhase({
       return;
     }
 
-    setPassSubmissionInFlight(true);
+    setPassSubmissionStage(stage);
     sendCommand({
       CommitCharlestonPass: {
         player: gameState.your_seat,
@@ -279,6 +288,7 @@ export function CharlestonPhase({
     gameState.your_seat,
     selectedHandTiles,
     sendCommand,
+    stage,
     stagedIncomingTiles.length,
   ]);
 
@@ -286,8 +296,7 @@ export function CharlestonPhase({
 
   useEffect(() => {
     if (clearSelectionSignal > 0) clearSelection();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clearSelectionSignal]);
+  }, [clearSelection, clearSelectionSignal]);
 
   // ── Signal: CLEAR_PENDING_VOTE_RETRY ─────────────────────────────────────
 
@@ -307,27 +316,7 @@ export function CharlestonPhase({
     if (courtesyZeroSignal > 0) {
       sendCommand({ AcceptCourtesyPass: { player: gameState.your_seat, tiles: [] } });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [courtesyZeroSignal]);
-
-  // ── Bridge: errorMessage → reset passSubmissionInFlight on retryable errors
-
-  useEffect(() => {
-    if (
-      storeErrorMessage &&
-      (/tile not in hand/i.test(storeErrorMessage) || /rate limit/i.test(storeErrorMessage))
-    ) {
-      setPassSubmissionInFlight(false);
-    }
-  }, [storeErrorMessage]);
-
-  // ── Courtesy: clear isPending when server responds ────────────────────────
-
-  useEffect(() => {
-    if (storeCourtesyAgreement !== null || storeCourtesyMismatch !== null) {
-      setIsPending(false);
-    }
-  }, [storeCourtesyAgreement, storeCourtesyMismatch]);
+  }, [courtesyZeroSignal, gameState.your_seat, sendCommand]);
 
   // ── Reset selection when max shrinks ─────────────────────────────────────
 
@@ -344,10 +333,7 @@ export function CharlestonPhase({
 
   useEffect(() => {
     clearSelection();
-    setIsPending(false);
-    setPassSubmissionInFlight(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stage]);
+  }, [clearSelection, stage]);
 
   // ── Vote handling ─────────────────────────────────────────────────────────
 
@@ -404,7 +390,7 @@ export function CharlestonPhase({
     sendCommand({
       ProposeCourtesyPass: { player: gameState.your_seat, tile_count: selectedIds.length },
     });
-    setIsPending(true);
+    setCourtesyPendingStage(stage);
   }, [
     agreedCount,
     clearSelection,
@@ -413,6 +399,7 @@ export function CharlestonPhase({
     isSelectingTiles,
     selectedIds,
     sendCommand,
+    stage,
   ]);
 
   const opponentSlotClassByPosition: Record<'top' | 'left' | 'right', string> = {

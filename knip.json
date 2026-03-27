@@ -1,11 +1,17 @@
 {
   "ignoreDependencies": ["husky"],
-  "ignoreBinaries": ["findstr", "start"],
+  "ignoreBinaries": ["start"],
   "ignoreExportsUsedInFile": {
     "interface": true,
     "type": true
   },
-  "ignore": ["eslint.config.js", "vitest.config.ts", "tailwind.config.cjs"],
+  "ignore": [
+    "eslint.config.js",
+    "vitest.config.ts",
+    "tailwind.config.cjs",
+    "scripts/add-tile-numbers.js",
+    "scripts/render-mcp-bootstrap.mjs"
+  ],
   "workspaces": {
     "apps/client": {
       "project": ["src/**/*.{ts,tsx,css}"],

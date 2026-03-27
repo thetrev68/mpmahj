@@ -137,8 +137,8 @@ export function PlayingPhase({
     () =>
       isDiscardingStage || isCallWindowActive
         ? selectedIds
-          .map((id) => handTileInstances.find((instance) => instance.id === id)?.tile)
-          .filter((tile): tile is Tile => tile !== undefined)
+            .map((id) => handTileInstances.find((instance) => instance.id === id)?.tile)
+            .filter((tile): tile is Tile => tile !== undefined)
         : [],
     [handTileInstances, isCallWindowActive, isDiscardingStage, selectedIds]
   );

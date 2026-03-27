@@ -158,7 +158,7 @@ pub(super) async fn handle_create_room(
     // Join the player first, then configure bots
     let (seat, should_start, bot_seats) = {
         let mut room = room_arc.lock().await;
-        room.room_name = room_name.clone();
+        room.room_name = room_name;
 
         // Join the player to the room
         let seat = room

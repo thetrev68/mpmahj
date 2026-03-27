@@ -175,6 +175,10 @@ pub async fn admin_pause_game(
 ) -> Result<Json<SuccessResponse>, (StatusCode, String)> {
     // Validate admin token
     let admin_ctx = require_admin_role(&headers, &state.auth)?;
+    let admin_id = admin_ctx.user_id;
+    let admin_display_name = admin_ctx.display_name;
+    let message = format!("Game paused by admin {}", admin_display_name);
+    let reason = payload.reason;
 
     // Check role (Moderator+)
     if !admin_ctx.role.is_moderator_or_higher() {
@@ -203,15 +207,15 @@ pub async fn admin_pause_game(
 
     // Emit AdminPauseOverride event
     let event = Event::Public(PublicEvent::AdminPauseOverride {
-        admin_id: admin_ctx.user_id.clone(),
-        admin_display_name: admin_ctx.display_name.clone(),
-        reason: payload.reason.clone(),
+        admin_id,
+        admin_display_name,
+        reason,
     });
     dispatch_room_event(&mut room_lock, event, EventDelivery::broadcast()).await;
 
     Ok(Json(SuccessResponse {
         success: true,
-        message: format!("Game paused by admin {}", admin_ctx.display_name),
+        message,
     }))
 }
 
@@ -232,6 +236,9 @@ pub async fn admin_resume_game(
 ) -> Result<Json<SuccessResponse>, (StatusCode, String)> {
     // Validate admin token
     let admin_ctx = require_admin_role(&headers, &state.auth)?;
+    let admin_id = admin_ctx.user_id;
+    let admin_display_name = admin_ctx.display_name;
+    let message = format!("Game resumed by admin {}", admin_display_name);
 
     // Check role (Moderator+)
     if !admin_ctx.role.is_moderator_or_higher() {
@@ -260,14 +267,14 @@ pub async fn admin_resume_game(
 
     // Emit AdminResumeOverride event
     let event = Event::Public(PublicEvent::AdminResumeOverride {
-        admin_id: admin_ctx.user_id.clone(),
-        admin_display_name: admin_ctx.display_name.clone(),
+        admin_id,
+        admin_display_name,
     });
     dispatch_room_event(&mut room_lock, event, EventDelivery::broadcast()).await;
 
     Ok(Json(SuccessResponse {
         success: true,
-        message: format!("Game resumed by admin {}", admin_ctx.display_name),
+        message,
     }))
 }
 
@@ -330,7 +337,7 @@ pub async fn admin_get_room_health(
     }
 
     Ok(Json(RoomHealthResponse {
-        room_id: room_lock.room_id.clone(),
+        room_id,
         created_at: room_lock.created_at,
         game_started: room_lock.game_started,
         player_count: room_lock.sessions.player_count(),
@@ -384,7 +391,7 @@ pub async fn admin_list_rooms(
         if let Some(room) = state.network.rooms.get_room(&room_id) {
             let room_lock = room.lock().await;
             summaries.push(RoomSummary {
-                room_id: room_lock.room_id.clone(),
+                room_id,
                 created_at: room_lock.created_at,
                 game_started: room_lock.game_started,
                 player_count: room_lock.sessions.len(),
@@ -492,7 +499,7 @@ pub async fn admin_download_replay(
         .collect();
 
     Ok(Json(ReplayData {
-        room_id: room_lock.room_id.clone(),
+        room_id,
         created_at: room_lock.created_at,
         players,
         history: history_summaries,
