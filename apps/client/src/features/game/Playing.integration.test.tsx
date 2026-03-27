@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { act, fireEvent, renderWithProviders, screen, waitFor, within } from '@/test/test-utils';
 import { GameBoard } from '@/components/game/GameBoard';
 import { gameStates } from '@/test/fixtures';
@@ -364,5 +364,95 @@ describe('Playing Phase Joker Exchange (US-053)', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('joker-tile-exchangeable')).not.toBeInTheDocument();
     });
+  });
+});
+
+// ─── Turn Discard Flow (formerly turn-discard.integration.test.tsx) ──────────
+
+describe('Turn Discard Integration (US-010)', () => {
+  test('complete discard flow: select tile → discard → TileDiscarded event → hand updated', async () => {
+    const mockWs = createMockWebSocket();
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.playingDiscarding} ws={mockWs} />
+    );
+    vi.mocked(mockWs.send).mockClear();
+
+    // Verify we're in Discarding stage with 14 tiles
+    expect(screen.getByTestId('gameplay-status-bar')).toHaveTextContent(
+      /Your turn — Select a tile to discard/
+    );
+    expect(screen.getByTestId('player-rack')).toHaveAttribute('aria-label', 'Your rack: 14 tiles');
+
+    // Select a tile to discard (tile value 5)
+    const tileToDiscard = screen.getByTestId(/tile-5-/);
+    await user.click(tileToDiscard);
+    expect(tileToDiscard).toHaveClass('tile-selected');
+
+    // Discard button enabled
+    expect(screen.getByTestId('proceed-button')).toBeEnabled();
+
+    // Click Discard
+    await user.click(screen.getByTestId('proceed-button'));
+
+    // Verify DiscardTile command was sent
+    expect(mockWs.send).toHaveBeenCalled();
+    const sentCommand = JSON.parse(vi.mocked(mockWs.send).mock.calls[0][0] as string);
+    expect(sentCommand.payload.command).toEqual({
+      DiscardTile: { player: 'South', tile: 5 },
+    });
+
+    // Simulate server response
+    act(() => {
+      mockWs.triggerMessage({
+        kind: 'Event',
+        payload: {
+          event: {
+            Public: {
+              TileDiscarded: { player: 'South', tile: 5 },
+            },
+          },
+        },
+      });
+    });
+
+    // Tile removed from hand (14 → 13)
+    await waitFor(() => {
+      expect(screen.getByTestId('player-rack')).toHaveAttribute(
+        'aria-label',
+        'Your rack: 13 tiles'
+      );
+    });
+
+    // Tile appears in discard pool
+    await waitFor(() => {
+      const discardPool = screen.getByTestId('discard-pool');
+      expect(discardPool).toBeInTheDocument();
+      const discardPoolTiles = screen.getAllByTestId(/^discard-pool-tile-/);
+      expect(discardPoolTiles.length).toBe(4);
+    });
+  });
+
+  test('discard button disabled when no tile selected', () => {
+    const mockWs = createMockWebSocket();
+    renderWithProviders(<GameBoard initialState={gameStates.playingDiscarding} ws={mockWs} />);
+
+    expect(screen.getByTestId('proceed-button')).toBeDisabled();
+  });
+
+  test('hand becomes non-interactive after sending discard command', async () => {
+    const mockWs = createMockWebSocket();
+    const { user } = renderWithProviders(
+      <GameBoard initialState={gameStates.playingDiscarding} ws={mockWs} />
+    );
+    vi.mocked(mockWs.send).mockClear();
+
+    await user.click(screen.getByTestId(/tile-5-/));
+    await user.click(screen.getByTestId('proceed-button'));
+
+    // Try to select another tile — should not work
+    await user.click(screen.getByTestId(/tile-1-/));
+
+    // Only one command sent
+    expect(vi.mocked(mockWs.send).mock.calls).toHaveLength(1);
   });
 });

@@ -88,107 +88,47 @@ describe('Tile Component', () => {
       expect(tileElement).not.toHaveClass('tile-disabled');
     });
 
-    test('applies selected state styling', () => {
-      renderWithProviders(<Tile tile={7} state="selected" />);
-
-      const tileElement = screen.getByTestId('tile-7');
-      expect(tileElement).toHaveClass('tile-selected');
-
-      // Selected tiles should be raised with gold border
-      expect(tileElement).toHaveStyle({
-        transform: 'translateY(-12px)',
-      });
+    test.each([
+      ['selected', 7, 'tile-selected', { transform: 'translateY(-12px)' }],
+      ['highlighted', 12, 'tile-highlighted', { animation: 'pulse-border 1.5s infinite' }],
+      ['dimmed', 20, 'tile-dimmed', { opacity: '0.6' }],
+    ] as const)('applies %s state styling', (state, tile, className, style) => {
+      renderWithProviders(<Tile tile={tile} state={state} />);
+      const el = screen.getByTestId(`tile-${tile}`);
+      expect(el).toHaveClass(className);
+      expect(el).toHaveStyle(style);
     });
 
     test('applies disabled state styling', () => {
       renderWithProviders(<Tile tile={35} state="disabled" />);
-
       const tileElement = screen.getByTestId('tile-35');
       expect(tileElement).toHaveClass('tile-disabled');
-
-      // Disabled tiles should have reduced opacity and be grayed out
       const styles = window.getComputedStyle(tileElement);
       expect(styles.opacity).toBe('0.5');
       expect(styles.cursor).toBe('not-allowed');
     });
 
-    test('applies highlighted state styling', () => {
-      renderWithProviders(<Tile tile={12} state="highlighted" />);
-
-      const tileElement = screen.getByTestId('tile-12');
-      expect(tileElement).toHaveClass('tile-highlighted');
-
-      // Highlighted tiles should have pulsing animation
-      expect(tileElement).toHaveStyle({
-        animation: 'pulse-border 1.5s infinite',
-      });
-    });
-
-    test('applies dimmed state styling', () => {
-      renderWithProviders(<Tile tile={20} state="dimmed" />);
-
-      const tileElement = screen.getByTestId('tile-20');
-      expect(tileElement).toHaveClass('tile-dimmed');
-
-      // Dimmed tiles should be semi-transparent
-      expect(tileElement).toHaveStyle({
-        opacity: '0.6',
-      });
-    });
-
     test('defaults to default state when state prop is not provided', () => {
       renderWithProviders(<Tile tile={8} />);
-
-      const tileElement = screen.getByTestId('tile-8');
-      expect(tileElement).toHaveClass('tile-default');
+      expect(screen.getByTestId('tile-8')).toHaveClass('tile-default');
     });
   });
 
   describe('Size Variants - P0 Tests', () => {
-    test('applies small size variant', () => {
-      renderWithProviders(<Tile tile={4} size="small" />);
-
-      const tileElement = screen.getByTestId('tile-4');
-      expect(tileElement).toHaveClass('tile-small');
-
-      // Small tiles: 32px × 46px
-      expect(tileElement).toHaveStyle({
-        width: '32px',
-        height: '46px',
-      });
-    });
-
-    test('applies medium size variant (default)', () => {
-      renderWithProviders(<Tile tile={6} size="medium" />);
-
-      const tileElement = screen.getByTestId('tile-6');
-      expect(tileElement).toHaveClass('tile-medium');
-
-      // Medium tiles: 63px × 90px
-      expect(tileElement).toHaveStyle({
-        width: '63px',
-        height: '90px',
-      });
-    });
-
-    test('applies large size variant', () => {
-      renderWithProviders(<Tile tile={11} size="large" />);
-
-      const tileElement = screen.getByTestId('tile-11');
-      expect(tileElement).toHaveClass('tile-large');
-
-      // Large tiles: 80px × 114px
-      expect(tileElement).toHaveStyle({
-        width: '80px',
-        height: '114px',
-      });
+    test.each([
+      ['small', 4, 'tile-small', { width: '32px', height: '46px' }],
+      ['medium', 6, 'tile-medium', { width: '63px', height: '90px' }],
+      ['large', 11, 'tile-large', { width: '80px', height: '114px' }],
+    ] as const)('applies %s size variant', (size, tile, className, style) => {
+      renderWithProviders(<Tile tile={tile} size={size} />);
+      const el = screen.getByTestId(`tile-${tile}`);
+      expect(el).toHaveClass(className);
+      expect(el).toHaveStyle(style);
     });
 
     test('defaults to medium size when size prop is not provided', () => {
       renderWithProviders(<Tile tile={15} />);
-
-      const tileElement = screen.getByTestId('tile-15');
-      expect(tileElement).toHaveClass('tile-medium');
+      expect(screen.getByTestId('tile-15')).toHaveClass('tile-medium');
     });
   });
 

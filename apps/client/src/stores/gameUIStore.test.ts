@@ -28,21 +28,46 @@ describe('gameUIStore', () => {
     expect(s.gameOver).toBeNull();
   });
 
-  // ── Setup ──────────────────────────────────────────────────────────────
+  // ── Trivial field-set actions (table-driven) ─────────────────────────
 
-  test('SET_DICE_ROLL updates diceRoll', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_DICE_ROLL', value: 6 });
-    expect(getState().diceRoll).toBe(6);
+  test.each([
+    ['SET_DICE_ROLL', { type: 'SET_DICE_ROLL', value: 6 }, 'diceRoll', 6],
+    [
+      'SET_SHOW_DICE_OVERLAY',
+      { type: 'SET_SHOW_DICE_OVERLAY', value: true },
+      'showDiceOverlay',
+      true,
+    ],
+    [
+      'SET_SETUP_PHASE',
+      { type: 'SET_SETUP_PHASE', phase: 'RollingDice' },
+      'setupPhase',
+      'RollingDice',
+    ],
+    [
+      'SET_HAS_SUBMITTED_PASS',
+      { type: 'SET_HAS_SUBMITTED_PASS', value: true },
+      'hasSubmittedPass',
+      true,
+    ],
+    ['SET_IS_PROCESSING', { type: 'SET_IS_PROCESSING', value: true }, 'isProcessing', true],
+    ['SET_ERROR_MESSAGE', { type: 'SET_ERROR_MESSAGE', message: 'Oops' }, 'errorMessage', 'Oops'],
+    [
+      'SET_WALL_EXHAUSTED',
+      { type: 'SET_WALL_EXHAUSTED', remaining_tiles: 2 },
+      'wallExhausted',
+      { remaining_tiles: 2 },
+    ],
+    ['SET_CALLED_FROM', { type: 'SET_CALLED_FROM', discardedBy: 'West' }, 'calledFrom', 'West'],
+  ] as const)('%s sets the field correctly', (_label, action, field, expected) => {
+    useGameUIStore.getState().dispatch(action as never);
+    expect(getState()[field as keyof ReturnType<typeof getState>]).toEqual(expected);
   });
 
-  test('SET_SHOW_DICE_OVERLAY updates showDiceOverlay', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_SHOW_DICE_OVERLAY', value: true });
-    expect(getState().showDiceOverlay).toBe(true);
-  });
-
-  test('SET_SETUP_PHASE updates setupPhase', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_SETUP_PHASE', phase: 'RollingDice' });
-    expect(getState().setupPhase).toBe('RollingDice');
+  test('SET_ERROR_MESSAGE clears via null', () => {
+    useGameUIStore.getState().dispatch({ type: 'SET_ERROR_MESSAGE', message: 'Oops' });
+    useGameUIStore.getState().dispatch({ type: 'SET_ERROR_MESSAGE', message: null });
+    expect(getState().errorMessage).toBeNull();
   });
 
   // ── Charleston pass tracking ───────────────────────────────────────────
@@ -58,13 +83,6 @@ describe('gameUIStore', () => {
     useGameUIStore.getState().dispatch({ type: 'ADD_READY_PLAYER', seat: 'East' });
     useGameUIStore.getState().dispatch({ type: 'SET_READY_PLAYERS', value: ['South', 'North'] });
     expect(getState().readyPlayers).toEqual(['South', 'North']);
-  });
-
-  test('SET_HAS_SUBMITTED_PASS updates flag', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_HAS_SUBMITTED_PASS', value: true });
-    expect(getState().hasSubmittedPass).toBe(true);
-    useGameUIStore.getState().dispatch({ type: 'SET_HAS_SUBMITTED_PASS', value: false });
-    expect(getState().hasSubmittedPass).toBe(false);
   });
 
   test('RESET_CHARLESTON_STATE clears pass-related fields', () => {
@@ -241,17 +259,7 @@ describe('gameUIStore', () => {
     expect(getState().resolutionOverlay).toBeNull();
   });
 
-  test('SET_IS_PROCESSING updates flag', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_IS_PROCESSING', value: true });
-    expect(getState().isProcessing).toBe(true);
-  });
-
-  test('SET_ERROR_MESSAGE and clear via null', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_ERROR_MESSAGE', message: 'Oops' });
-    expect(getState().errorMessage).toBe('Oops');
-    useGameUIStore.getState().dispatch({ type: 'SET_ERROR_MESSAGE', message: null });
-    expect(getState().errorMessage).toBeNull();
-  });
+  // SET_IS_PROCESSING and SET_ERROR_MESSAGE covered in table-driven tests above
 
   // ── IOU ───────────────────────────────────────────────────────────────
 
@@ -314,10 +322,7 @@ describe('gameUIStore', () => {
     expect(getState().skippedPlayers[0].player).toBe('North');
   });
 
-  test('SET_WALL_EXHAUSTED stores remaining tiles', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_WALL_EXHAUSTED', remaining_tiles: 2 });
-    expect(getState().wallExhausted?.remaining_tiles).toBe(2);
-  });
+  // SET_WALL_EXHAUSTED covered in table-driven tests above
 
   test('SET_HEAVENLY_HAND stores pattern and score', () => {
     useGameUIStore.getState().dispatch({
@@ -329,10 +334,7 @@ describe('gameUIStore', () => {
     expect(getState().heavenlyHand?.base_score).toBe(500);
   });
 
-  test('SET_CALLED_FROM stores calledFrom seat', () => {
-    useGameUIStore.getState().dispatch({ type: 'SET_CALLED_FROM', discardedBy: 'West' });
-    expect(getState().calledFrom).toBe('West');
-  });
+  // SET_CALLED_FROM covered in table-driven tests above
 
   // ── No-op actions ─────────────────────────────────────────────────────
 
