@@ -45,7 +45,7 @@ export function executeSideEffects(effects: SideEffect[], context: EventSideEffe
 
   effects.forEach((effect) => {
     if (effect.type === 'PLAY_SOUND') {
-      playSound(effect.sound as SoundEffect);
+      playSound(effect.sound);
       return;
     }
 

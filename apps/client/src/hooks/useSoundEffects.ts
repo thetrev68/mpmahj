@@ -27,8 +27,13 @@ import {
  * - `'tile-draw'` — Player draws a tile
  * - `'tile-discard'` — Player discards a tile
  * - `'tile-call'` — Meld call (Pung, Kong, etc.)
+ * - `'tile-place'` — Tile placed into an exposed meld / upgrade
  * - `'charleston-pass'` — Tiles passed during Charleston
  * - `'mahjong'` — Player declares Mahjong (win)
+ * - `'mahjong-win'` — Winning hand validated / revealed
+ * - `'game-draw'` — Hand ends without a winner
+ * - `'dead-hand-penalty'` — Hand declared dead
+ * - `'undo-whoosh'` — History/state restore feedback
  * - `'wall-break'` — Wall breaking at game setup
  * - `'dice-roll'` — Dice rolled
  */
@@ -36,8 +41,13 @@ export type SoundEffect =
   | 'tile-draw'
   | 'tile-discard'
   | 'tile-call'
+  | 'tile-place'
   | 'charleston-pass'
   | 'mahjong'
+  | 'mahjong-win'
+  | 'game-draw'
+  | 'dead-hand-penalty'
+  | 'undo-whoosh'
   | 'wall-break'
   | 'dice-roll'
   | 'tile-select';
@@ -158,8 +168,13 @@ export function useSoundEffects(options: UseSoundEffectsOptions = {}): UseSoundE
           'tile-draw': 440,
           'tile-discard': 520,
           'tile-call': 660,
+          'tile-place': 700,
           'charleston-pass': 400,
           mahjong: 880,
+          'mahjong-win': 980,
+          'game-draw': 300,
+          'dead-hand-penalty': 180,
+          'undo-whoosh': 260,
           'wall-break': 330,
           'dice-roll': 220,
           'tile-select': 620,

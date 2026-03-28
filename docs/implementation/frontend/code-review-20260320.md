@@ -46,9 +46,9 @@ Untracked but also cluttering: `check-all.log` (173 KB), `checkall.log` (508 KB)
 
 ~~Knip detected `ErrorBoundary.tsx:75` — `DefaultFallback` is exported but never imported elsewhere.~~ `DefaultFallback` is no longer exported; only `ErrorBoundary` is exported.
 
-#### Sound effects placeholder — **OPEN**
+#### Sound effects placeholder — **PARTIAL**
 
-`useSoundEffects.ts:146-175` falls back to oscillator-generated beep tones when audio files aren't configured. The `SoundEffect` type defines 8 variants, but event handlers dispatch at least 5 additional sound names (`'game-draw'`, `'mahjong-win'`, `'dead-hand-penalty'`, `'tile-place'`, `'undo-whoosh'`) that silently fall through. This is documented in TODO.md but represents a runtime behavior gap.
+`useSoundEffects.ts` now recognizes the extra sound names dispatched by event handlers (`'game-draw'`, `'mahjong-win'`, `'dead-hand-penalty'`, `'tile-place'`, `'undo-whoosh'`), and the side-effect pipeline is typed against the real `SoundEffect` union instead of casting arbitrary strings. The remaining gap is asset quality: most sounds still fall back to synthesized tones until real audio files are added.
 
 #### Large components — **OPEN** (unchanged, may be acceptable)
 

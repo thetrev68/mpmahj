@@ -23,6 +23,7 @@ import type { MeldType } from '@/types/bindings/generated/MeldType';
 import type { MoveHistorySummary } from '@/types/bindings/generated/MoveHistorySummary';
 import type { HistoryMode } from '@/types/bindings/generated/HistoryMode';
 import type { HintData } from '@/types/bindings/generated/HintData';
+import type { SoundEffect } from '@/hooks/useSoundEffects';
 
 /**
  * State updater function for game state.
@@ -220,7 +221,7 @@ export type SideEffect =
     }
   | {
       type: 'PLAY_SOUND';
-      sound: string;
+      sound: SoundEffect;
     };
 
 /**
