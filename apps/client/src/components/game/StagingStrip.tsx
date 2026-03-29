@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import type { Tile as TileValue } from '@/types/bindings/generated/Tile';
 import { SEAT_ENTRY_CLASS } from './seatAnimations';
+import { getCssVarPx } from '@/lib/utils/cssVar';
 
 export interface StagedTile {
   id: string;
@@ -32,10 +33,9 @@ export interface StagingStripProps {
   showActionButtons?: boolean;
 }
 
-const STAGING_SLOT_WIDTH_PX = 63;
-const STAGING_SLOT_HEIGHT_PX = 90;
-const STAGING_SLOT_GAP_PX = 8;
-const STAGING_STRIP_PADDING_PX = 16;
+const DEFAULT_SLOT_W = 63;
+const DEFAULT_SLOT_H = 90;
+const DEFAULT_SLOT_GAP = 8;
 
 export const StagingStrip: FC<StagingStripProps> = ({
   incomingTiles,
@@ -87,8 +87,9 @@ export const StagingStrip: FC<StagingStripProps> = ({
       return;
     }
 
-    const baseWidth =
-      slotCount * STAGING_SLOT_WIDTH_PX + Math.max(0, slotCount - 1) * STAGING_SLOT_GAP_PX;
+    const slotW = getCssVarPx('--tile-w-md', DEFAULT_SLOT_W);
+    const slotGap = getCssVarPx('--staging-slot-gap', DEFAULT_SLOT_GAP);
+    const baseWidth = slotCount * slotW + Math.max(0, slotCount - 1) * slotGap;
 
     const updateScale = () => {
       const availableWidth = viewport.clientWidth;
@@ -146,7 +147,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
     return (
       <div
         key={tile.id}
-        className="flex h-[90px] w-[63px] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
+        className="flex h-[var(--staging-slot-height)] w-[var(--staging-slot-width)] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
         data-slot-kind="incoming"
         data-testid={`staging-slot-${slotIndex}`}
       >
@@ -190,7 +191,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
     return (
       <div
         key={tile.id}
-        className="flex h-[90px] w-[63px] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
+        className="flex h-[var(--staging-slot-height)] w-[var(--staging-slot-width)] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
         data-slot-kind="outgoing"
         data-testid={`staging-slot-${slotIndex}`}
       >
@@ -210,7 +211,7 @@ export const StagingStrip: FC<StagingStripProps> = ({
     return (
       <div
         key={`empty-slot-${slotIndex}`}
-        className="flex h-[90px] w-[63px] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
+        className="flex h-[var(--staging-slot-height)] w-[var(--staging-slot-width)] items-center justify-center rounded-lg border-2 border-dashed border-white/30"
         data-slot-kind="empty"
         data-testid={`staging-slot-${slotIndex}`}
       />
@@ -242,15 +243,11 @@ export const StagingStrip: FC<StagingStripProps> = ({
   ];
 
   const stripStyles = {
-    '--staging-slot-width': `${STAGING_SLOT_WIDTH_PX}px`,
-    '--staging-slot-height': `${STAGING_SLOT_HEIGHT_PX}px`,
-    '--staging-slot-gap': `${STAGING_SLOT_GAP_PX}px`,
-    '--staging-strip-padding': `${STAGING_STRIP_PADDING_PX}px`,
     '--staging-slot-count': String(slotCount),
     '--staging-slot-row-scale': String(slotRowScale),
   } as CSSProperties;
 
-  const slotViewportHeight = STAGING_SLOT_HEIGHT_PX * slotRowScale;
+  const slotViewportHeight = getCssVarPx('--tile-h-md', DEFAULT_SLOT_H) * slotRowScale;
 
   const slotElements = slotDescriptors.map((descriptor, slotIndex) => {
     if (descriptor.kind === 'incoming') {

@@ -49,9 +49,7 @@ describe('StagingStrip', () => {
 
     expect(strip).not.toHaveClass('w-fit');
     expect(strip).toHaveClass('overflow-visible');
-    expect(strip.getAttribute('style')).toContain(
-      '--staging-slot-width: 63px; --staging-slot-height: 90px; --staging-slot-gap: 8px; --staging-strip-padding: 16px; --staging-slot-count: 6;'
-    );
+    expect(strip.getAttribute('style')).toContain('--staging-slot-count: 6;');
     expect(strip).toHaveStyle({
       maxWidth:
         'calc(calc(6 * var(--staging-slot-width) + (6 - 1) * var(--staging-slot-gap)) + 2 * var(--staging-strip-padding))',

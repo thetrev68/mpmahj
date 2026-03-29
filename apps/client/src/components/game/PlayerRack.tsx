@@ -27,6 +27,7 @@ import type { Seat } from '@/types/bindings/generated/Seat';
 import type { TileInstance } from './types';
 import { RACK_WOOD_STYLE } from './rackStyles';
 import { SEAT_ENTRY_CLASS } from './seatAnimations';
+import { getCssVarPx } from '@/lib/utils/cssVar';
 
 interface PlayerRackProps {
   /** Player's current hand tiles */
@@ -75,10 +76,11 @@ interface PlayerRackProps {
   showSelectionCounter?: boolean;
 }
 
-const PLAYER_TILE_WIDTH_PX = 63;
-const TILE_GAP_PX = 2;
-const PLAYER_RACK_SPAN_PX = PLAYER_TILE_WIDTH_PX * 16 + TILE_GAP_PX * 15;
-const PLAYER_RACK_CONTENT_HEIGHT_PX = 198;
+const TILE_COUNT = 16;
+const DEFAULT_TILE_W = 63;
+const DEFAULT_TILE_GAP = 2;
+const DEFAULT_RACK_SPAN = DEFAULT_TILE_W * TILE_COUNT + DEFAULT_TILE_GAP * (TILE_COUNT - 1);
+const DEFAULT_CONTENT_H = 198;
 
 export const PlayerRack: FC<PlayerRackProps> = ({
   tiles,
@@ -109,6 +111,8 @@ export const PlayerRack: FC<PlayerRackProps> = ({
   const isInteractive = mode !== 'view-only' && !disabled;
   const [activeNewlyReceivedTileIds, setActiveNewlyReceivedTileIds] = useState<string[]>([]);
   const [rackScale, setRackScale] = useState(1);
+  const [rackSpan, setRackSpan] = useState(DEFAULT_RACK_SPAN);
+  const [rackContentHeight, setRackContentHeight] = useState(DEFAULT_CONTENT_H);
   const rackViewportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -134,13 +138,20 @@ export const PlayerRack: FC<PlayerRackProps> = ({
       return;
     }
 
+    const tileW = getCssVarPx('--tile-w-md', DEFAULT_TILE_W);
+    const tileGap = getCssVarPx('--tile-gap', DEFAULT_TILE_GAP);
+    const span = tileW * TILE_COUNT + tileGap * (TILE_COUNT - 1);
+    const contentH = getCssVarPx('--player-rack-content-h', DEFAULT_CONTENT_H);
+    setRackSpan(span);
+    setRackContentHeight(contentH);
+
     const updateRackScale = () => {
       const availableWidth = viewport.clientWidth;
       if (availableWidth <= 0) {
         return;
       }
 
-      setRackScale(Math.min(1, availableWidth / PLAYER_RACK_SPAN_PX));
+      setRackScale(Math.min(1, availableWidth / span));
     };
 
     updateRackScale();
@@ -209,14 +220,14 @@ export const PlayerRack: FC<PlayerRackProps> = ({
         className="relative w-full max-w-full overflow-visible"
         data-testid="player-rack-viewport"
         data-board-region="player-rack-containment"
-        style={{ height: `${PLAYER_RACK_CONTENT_HEIGHT_PX * rackScale}px` }}
+        style={{ height: `${rackContentHeight * rackScale}px` }}
       >
         <div
           className="absolute left-1/2 top-0"
           data-testid="player-rack-scale-shell"
           data-rack-scale={rackScale < 1 ? 'scaled' : 'full-size'}
           style={{
-            width: `${PLAYER_RACK_SPAN_PX}px`,
+            width: `${rackSpan}px`,
             transform: `translateX(-50%) scale(${rackScale})`,
             transformOrigin: 'top center',
           }}
@@ -229,7 +240,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
             <div
               className="mb-1.5 w-full rounded-sm"
               data-testid="player-rack-meld-row"
-              style={{ minHeight: '90px', background: 'rgba(0,0,0,0.12)' }}
+              style={{ minHeight: 'var(--tile-h-md)', background: 'rgba(0,0,0,0.12)' }}
             >
               {melds.length > 0 ? (
                 <ExposedMeldsArea

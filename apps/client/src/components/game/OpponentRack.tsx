@@ -18,6 +18,7 @@ import type { Meld } from '@/types/bindings/generated/Meld';
 import type { PublicPlayerInfo } from '@/types/bindings/generated/PublicPlayerInfo';
 import type { Seat } from '@/types/bindings/generated/Seat';
 import { cn } from '@/lib/utils';
+import { getCssVarPx } from '@/lib/utils/cssVar';
 import { getOpponentPosition } from './opponentRackUtils';
 import { RACK_WOOD_STYLE } from './rackStyles';
 
@@ -42,9 +43,9 @@ interface OpponentRackProps {
   onJokerTileClick?: (meldIndex: number, tilePosition: number) => void;
 }
 
-const OPPONENT_TILE_WIDTH_PX = 32;
-const TILE_GAP_PX = 2;
-const OPPONENT_RACK_SPAN_PX = OPPONENT_TILE_WIDTH_PX * 16 + TILE_GAP_PX * 15;
+const OPPONENT_TILE_COUNT = 16;
+const DEFAULT_TILE_W_SM = 32;
+const DEFAULT_TILE_GAP = 2;
 
 /** Maps opponent position to the tile rotation that faces tiles toward the table center. */
 const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'right' | undefined> =
@@ -54,7 +55,8 @@ const POSITION_TO_ROTATION: Record<'top' | 'left' | 'right', 'up' | 'left' | 'ri
     left: 'left',
   };
 
-const SIDE_SLOT_CLASS = 'flex h-[32px] w-[46px] items-center justify-center';
+const SIDE_SLOT_CLASS =
+  'flex h-[var(--tile-w-sm)] w-[var(--tile-h-sm)] items-center justify-center';
 
 export const OpponentRack: FC<OpponentRackProps> = ({
   player,
@@ -67,6 +69,9 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   onJokerTileClick,
 }) => {
   const rackMelds = melds ?? player.exposed_melds;
+  const tileWSm = getCssVarPx('--tile-w-sm', DEFAULT_TILE_W_SM);
+  const tileGap = getCssVarPx('--tile-gap', DEFAULT_TILE_GAP);
+  const opponentRackSpan = tileWSm * OPPONENT_TILE_COUNT + tileGap * (OPPONENT_TILE_COUNT - 1);
   const position = getOpponentPosition(yourSeat, player.seat);
   const concealed = concealedCount(player, rackMelds);
   const isVertical = position === 'left' || position === 'right';
@@ -90,9 +95,7 @@ export const OpponentRack: FC<OpponentRackProps> = ({
         : 'flex flex-row-reverse items-stretch gap-1';
   const rackShellStyle = {
     ...RACK_WOOD_STYLE,
-    ...(isVertical
-      ? { height: `${OPPONENT_RACK_SPAN_PX}px` }
-      : { width: `${OPPONENT_RACK_SPAN_PX}px` }),
+    ...(isVertical ? { height: `${opponentRackSpan}px` } : { width: `${opponentRackSpan}px` }),
   };
   const rackAndStagingClass = cn(
     'gap-1',
@@ -108,12 +111,12 @@ export const OpponentRack: FC<OpponentRackProps> = ({
   );
   const meldRowClass = cn(
     'rounded-sm',
-    isVertical ? 'h-full min-w-[46px]' : 'w-full',
-    !isVertical && 'min-h-[46px]'
+    isVertical ? 'h-full min-w-[var(--tile-h-sm)]' : 'w-full',
+    !isVertical && 'min-h-[var(--tile-h-sm)]'
   );
   const meldRowStyle = isVertical
-    ? { minHeight: `${OPPONENT_RACK_SPAN_PX}px`, background: 'rgba(0,0,0,0.12)' }
-    : { minHeight: '46px', background: 'rgba(0,0,0,0.12)' };
+    ? { minHeight: `${opponentRackSpan}px`, background: 'rgba(0,0,0,0.12)' }
+    : { minHeight: 'var(--tile-h-sm)', background: 'rgba(0,0,0,0.12)' };
   const stagingRow = shouldRenderStaging ? (
     <div className={stagingRowClass} data-testid={`opponent-staging-${seatKey}`} aria-hidden="true">
       {Array.from({ length: stagingCount }).map((_, i) => (

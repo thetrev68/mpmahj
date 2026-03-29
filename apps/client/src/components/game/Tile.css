@@ -25,20 +25,20 @@
   cursor: pointer;
 }
 
-/* Size variants */
+/* Size variants — values defined in :root (index.css) */
 .tile-small {
-  width: 32px;
-  height: 46px;
+  width: var(--tile-w-sm);
+  height: var(--tile-h-sm);
 }
 
 .tile-medium {
-  width: 63px;
-  height: 90px;
+  width: var(--tile-w-md);
+  height: var(--tile-h-md);
 }
 
 .tile-large {
-  width: 80px;
-  height: 114px;
+  width: var(--tile-w-lg);
+  height: var(--tile-h-lg);
 }
 
 /* State: Default */

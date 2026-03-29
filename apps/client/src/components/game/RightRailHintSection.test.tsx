@@ -19,7 +19,7 @@ function renderSection(overrides: Partial<Parameters<typeof RightRailHintSection
   return renderWithProviders(
     <div
       data-testid="right-rail"
-      className="right-rail hidden lg:flex lg:min-w-[24rem] lg:flex-1 lg:flex-col lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card dark:lg:bg-slate-950"
+      className="right-rail hidden lg:flex lg:min-w-[var(--right-rail-w)] lg:flex-1 lg:flex-col lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card dark:lg:bg-slate-950"
     >
       <div
         data-testid="right-rail-bottom"

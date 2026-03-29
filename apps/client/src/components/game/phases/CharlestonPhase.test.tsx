@@ -492,8 +492,8 @@ describe('CharlestonPhase', () => {
 
       expect(screen.getByTestId('charleston-board-regions')).toHaveClass(
         'grid',
-        'grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)_minmax(5.5rem,auto)]',
-        'grid-rows-[minmax(6.5rem,auto)_minmax(0,1fr)_auto]'
+        'grid-cols-[minmax(var(--charleston-col-side),auto)_minmax(0,1fr)_minmax(var(--charleston-col-side),auto)]',
+        'grid-rows-[minmax(var(--charleston-row-top),auto)_minmax(0,1fr)_auto]'
       );
       expect(screen.getByTestId('player-zone-region')).toHaveClass('col-span-3', 'row-start-3');
     });

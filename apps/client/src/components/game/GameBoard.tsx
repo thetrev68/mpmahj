@@ -371,8 +371,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
           data-testid="board-layout-shell"
         >
           <div
-            // 26rem = 1rem left layout padding + 1rem right layout padding + 24rem minimum right rail width.
-            className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))] lg:flex-none lg:aspect-square"
+            className="relative h-full w-full min-w-0 lg:h-auto lg:w-[min(var(--board-max-w),calc(100vh-var(--board-top-offset)),calc(100vw-var(--board-right-reserve)))] lg:flex-none lg:aspect-square"
             data-testid="square-board-container"
           >
             <div
@@ -470,7 +469,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             </ErrorBoundary>
           </div>
           <div
-            className="right-rail hidden lg:flex lg:min-w-[24rem] lg:flex-1 lg:flex-col lg:self-stretch lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card dark:lg:bg-slate-950"
+            className="right-rail hidden lg:flex lg:min-w-[var(--right-rail-w)] lg:flex-1 lg:flex-col lg:self-stretch lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card dark:lg:bg-slate-950"
             data-testid="right-rail"
           >
             <div

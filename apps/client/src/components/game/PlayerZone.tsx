@@ -24,7 +24,7 @@ export const PlayerZone: FC<PlayerZoneProps> = ({
     data-board-layer={BOARD_LAYERS.gameplay}
   >
     <div
-      className="mx-auto grid w-full max-w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]"
+      className="mx-auto grid w-full max-w-full gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(var(--player-zone-actions-min),var(--player-zone-actions-max))]"
       data-testid="player-zone-layout"
     >
       <div

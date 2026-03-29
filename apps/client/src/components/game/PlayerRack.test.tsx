@@ -87,7 +87,7 @@ describe('PlayerRack Component', () => {
 
       const meldRow = screen.getByTestId('player-rack-meld-row');
       expect(meldRow).toBeInTheDocument();
-      expect(meldRow.getAttribute('style')).toContain('min-height: 90px');
+      expect(meldRow.getAttribute('style')).toContain('min-height: var(--tile-h-md)');
     });
 
     test('renders both rack rows alongside concealed tiles (meld content deferred to VR-009)', () => {

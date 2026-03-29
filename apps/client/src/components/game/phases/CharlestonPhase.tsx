@@ -411,7 +411,7 @@ export function CharlestonPhase({
   return (
     <>
       <div
-        className="pointer-events-none absolute inset-0 grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)_minmax(5.5rem,auto)] grid-rows-[minmax(6.5rem,auto)_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-24 lg:gap-x-4 lg:px-4 lg:pt-28"
+        className="pointer-events-none absolute inset-0 grid grid-cols-[minmax(var(--charleston-col-side),auto)_minmax(0,1fr)_minmax(var(--charleston-col-side),auto)] grid-rows-[minmax(var(--charleston-row-top),auto)_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-24 lg:gap-x-4 lg:px-4 lg:pt-28"
         data-testid="charleston-board-regions"
       >
         {/* Opponent racks — face-down tiles for each opponent */}

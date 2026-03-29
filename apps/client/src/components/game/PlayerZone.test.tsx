@@ -113,7 +113,7 @@ describe('PlayerZone', () => {
 
     expect(screen.getByTestId('player-zone-layout')).toHaveClass(
       'grid',
-      'lg:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)]'
+      'lg:grid-cols-[minmax(0,1fr)_minmax(var(--player-zone-actions-min),var(--player-zone-actions-max))]'
     );
     expect(screen.getByTestId('player-zone-actions-slot')).toHaveClass(
       'flex-col',

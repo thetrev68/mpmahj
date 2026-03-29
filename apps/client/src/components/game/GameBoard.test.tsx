@@ -91,7 +91,7 @@ describe('GameBoard', () => {
       'right-rail',
       'hidden',
       'lg:flex',
-      'lg:min-w-[24rem]',
+      'lg:min-w-[var(--right-rail-w)]',
       'lg:flex-1',
       'lg:flex-col',
       'lg:rounded-l-2xl',
@@ -124,7 +124,7 @@ describe('GameBoard', () => {
     expect(screen.getByTestId('board-layout-shell')).toHaveClass('lg:items-stretch');
     expect(screen.getByTestId('board-layout-shell')).not.toHaveClass('lg:justify-end');
     expect(screen.getByTestId('square-board-container')).toHaveClass(
-      'lg:w-[min(1200px,calc(100vh-5rem),calc(100vw-26rem))]',
+      'lg:w-[min(var(--board-max-w),calc(100vh-var(--board-top-offset)),calc(100vw-var(--board-right-reserve)))]',
       'lg:flex-none'
     );
     expect(screen.getByTestId('square-board-container')).toHaveClass('lg:aspect-square');
