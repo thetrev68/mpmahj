@@ -34,6 +34,19 @@
       }
 
       #game-table {
+        --side-panel-width: 250px;
+        --rack-tile-width: 54px;
+        --rack-tile-height: 77px;
+        --rack-tile-gap: 5px;
+        --rack-padding-x: 10px;
+        --rack-surface-width: calc(
+          (14 * var(--rack-tile-width)) + (13 * var(--rack-tile-gap)) + (2 * var(--rack-padding-x))
+        );
+        --vertical-rack-width: 9.2vh;
+        --vertical-exposure-width: 9.2vh;
+        --vertical-rack-tile-width: 7vh;
+        --vertical-rack-tile-height: 5.1vh;
+        --vertical-rack-gap: 0.45vh;
         width: min(100vw, calc(100vh * 16 / 9));
         height: min(100vh, calc(100vw * 9 / 16));
         background: linear-gradient(135deg, #1e5c3c 0%, #2a7d52 100%);
@@ -69,88 +82,13 @@
         pointer-events: none;
       }
 
-      /* ===== WALLS ===== */
-      .wall {
-        position: absolute;
-        display: flex;
-        background: transparent;
-      }
-
-      .wall-east {
-        right: 12%;
-        top: 50%;
-        transform: translateY(-50%);
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .wall-north {
-        top: 15%;
-        left: 50%;
-        transform: translateX(-50%);
-        flex-direction: row;
-        gap: 2px;
-      }
-
-      .wall-west {
-        left: 12%;
-        top: 50%;
-        transform: translateY(-50%);
-        flex-direction: column;
-        gap: 2px;
-      }
-
-      .wall-south {
-        bottom: 22%;
-        left: 50%;
-        transform: translateX(-50%);
-        flex-direction: row;
-        gap: 2px;
-      }
-
-      .wall-stack {
-        width: 30px;
-        height: 44px;
-        background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-        border: 1px solid #999;
-        border-radius: 2px;
-        position: relative;
-      }
-
-      .wall-stack::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 0;
-        right: 0;
-        height: 1px;
-        background: rgba(0, 0, 0, 0.2);
-      }
-
-      /* Rotate wall tiles to point toward center */
-      .wall-north .wall-stack {
-        transform: rotate(180deg);
-      }
-
-      .wall-east .wall-stack {
-        width: 44px;
-        height: 30px;
-        margin: 0;
-      }
-
-      .wall-west .wall-stack {
-        width: 44px;
-        height: 30px;
-        margin: 0;
-      }
-
       /* ===== DISCARD FLOOR ===== */
       #discard-floor {
         position: absolute;
         top: 50%;
-        left: 50%;
+        left: calc(50% - (var(--side-panel-width) / 2));
         transform: translate(-50%, -50%);
-        width: 40%;
+        width: 42%;
         height: 40%;
         background: rgba(0, 0, 0, 0.15);
         border-radius: 8px;
@@ -219,24 +157,26 @@
       #player-rack {
         position: absolute;
         bottom: 2%;
-        left: 50%;
+        left: calc((100% - var(--side-panel-width)) / 2);
         transform: translateX(-50%);
-        width: auto;
-        max-width: 95%;
-        height: 18%;
+        width: var(--rack-surface-width);
+        max-width: var(--rack-surface-width);
+        height: auto;
         display: flex;
         flex-direction: column;
         gap: 8px;
       }
 
       #player-exposure {
-        height: 30%;
+        min-height: 110px;
         display: flex;
         gap: 8px;
-        padding: 0 12px;
+        padding: 8px 12px;
         background: rgba(0, 0, 0, 0.15);
         border-radius: 6px 6px 0 0;
         align-items: center;
+        justify-content: center;
+        overflow-x: auto;
       }
 
       .melded-set {
@@ -248,12 +188,12 @@
       }
 
       #player-hand {
-        height: 70%;
+        min-height: 110px;
         background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
         border-radius: 0 0 8px 8px;
-        padding: 8px 12px;
+        padding: 8px var(--rack-padding-x);
         display: flex;
-        gap: 6px;
+        gap: var(--rack-tile-gap);
         align-items: flex-end;
         justify-content: center;
         box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
@@ -261,8 +201,8 @@
       }
 
       .tile {
-        width: 63px;
-        height: 90px;
+        width: var(--rack-tile-width);
+        height: var(--rack-tile-height);
         background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
         border: 2px solid #999;
         border-radius: 4px;
@@ -324,14 +264,18 @@
       /* North - Top, horizontal layout */
       .opponent-rack.north {
         top: 2%;
-        left: 50%;
+        left: calc((100% - var(--side-panel-width)) / 2);
         transform: translateX(-50%);
         flex-direction: column;
+        width: var(--rack-surface-width);
+        max-width: var(--rack-surface-width);
+        align-items: stretch;
       }
 
       .opponent-rack.north .opponent-exposure {
         order: 2;
-        height: 50px;
+        width: 100%;
+        min-height: 110px;
         display: flex;
         flex-direction: row;
         gap: 8px;
@@ -339,15 +283,18 @@
         background: rgba(0, 0, 0, 0.15);
         border-radius: 6px;
         align-items: center;
+        justify-content: center;
+        overflow-x: auto;
       }
 
       .opponent-rack.north .opponent-hand {
         order: 1;
+        width: 100%;
         height: 110px;
         display: flex;
         flex-direction: row;
-        gap: 6px;
-        padding: 8px 12px;
+        gap: var(--rack-tile-gap);
+        padding: 8px var(--rack-padding-x);
         background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
         border-radius: 8px;
         box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4);
@@ -361,7 +308,7 @@
 
       /* West - Left side, vertical layout */
       .opponent-rack.west {
-        left: 1%;
+        left: 0.75%;
         top: 50%;
         transform: translateY(-50%);
         flex-direction: row;
@@ -371,25 +318,26 @@
 
       .opponent-rack.west .opponent-exposure {
         order: 2;
-        width: 6vh;
+        width: var(--vertical-exposure-width);
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--vertical-rack-gap);
         padding: 8px;
         background: rgba(0, 0, 0, 0.15);
         border-radius: 0 6px 6px 0;
         align-items: center;
         justify-content: center;
+        overflow-y: auto;
       }
 
       .opponent-rack.west .opponent-hand {
         order: 1;
-        width: 10.5vh;
+        width: var(--vertical-rack-width);
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 0.5vh;
+        gap: var(--vertical-rack-gap);
         padding: 8px;
         background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
         border-radius: 8px 0 0 8px;
@@ -399,14 +347,14 @@
       }
 
       .opponent-rack.west .opponent-tile {
-        width: 8vh;
-        height: 5.8vh;
+        width: var(--vertical-rack-tile-width);
+        height: var(--vertical-rack-tile-height);
         margin: 0;
       }
 
       /* East - Right side, vertical layout */
       .opponent-rack.east {
-        right: 1%;
+        right: calc(var(--side-panel-width) + 0.75%);
         top: 50%;
         transform: translateY(-50%);
         flex-direction: row-reverse;
@@ -416,25 +364,26 @@
 
       .opponent-rack.east .opponent-exposure {
         order: 2;
-        width: 6vh;
+        width: var(--vertical-exposure-width);
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: var(--vertical-rack-gap);
         padding: 8px;
         background: rgba(0, 0, 0, 0.15);
         border-radius: 6px 0 0 6px;
         align-items: center;
         justify-content: center;
+        overflow-y: auto;
       }
 
       .opponent-rack.east .opponent-hand {
         order: 1;
-        width: 10.5vh;
+        width: var(--vertical-rack-width);
         height: 100%;
         display: flex;
         flex-direction: column;
-        gap: 0.5vh;
+        gap: var(--vertical-rack-gap);
         padding: 8px;
         background: linear-gradient(180deg, #2a2a2a 0%, #3a3a3a 100%);
         border-radius: 0 8px 8px 0;
@@ -444,15 +393,15 @@
       }
 
       .opponent-rack.east .opponent-tile {
-        width: 8vh;
-        height: 5.8vh;
+        width: var(--vertical-rack-tile-width);
+        height: var(--vertical-rack-tile-height);
         margin: 0;
       }
 
       /* Opponent tiles - default size (north uses this) */
       .opponent-tile {
-        width: 63px;
-        height: 90px;
+        width: var(--rack-tile-width);
+        height: var(--rack-tile-height);
         background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
         border: 2px solid #999;
         border-radius: 4px;
@@ -487,10 +436,7 @@
 
       /* ===== ACTION BAR ===== */
       #action-bar {
-        position: absolute;
-        top: 50%;
-        right: 16%;
-        transform: translateY(-50%);
+        position: static;
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -498,6 +444,7 @@
         padding: 12px 16px;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        width: 100%;
       }
 
       .action-button {
@@ -509,7 +456,7 @@
         cursor: pointer;
         transition: all 0.2s;
         text-transform: uppercase;
-        min-width: 140px;
+        width: 100%;
       }
 
       .action-button:disabled {
@@ -580,7 +527,7 @@
       #charleston-tracker {
         position: absolute;
         top: 105px;
-        left: 50%;
+        left: calc((100% - var(--side-panel-width)) / 2);
         transform: translateX(-50%);
         background: rgba(0, 0, 0, 0.85);
         padding: 12px 24px;
@@ -604,12 +551,6 @@
       }
 
       #wind-indicator {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        background: rgba(0, 0, 0, 0.85);
-        padding: 8px 12px;
-        border-radius: 8px;
         display: flex;
         flex-direction: column;
         gap: 4px;
@@ -670,10 +611,31 @@
         background: rgba(0, 0, 0, 0.95);
       }
 
-      #hint-button {
+      #menu-panel {
         position: absolute;
-        bottom: 28%;
-        left: 1%;
+        top: 56px;
+        left: 15px;
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid #666;
+        border-radius: 8px;
+        padding: 14px;
+        min-width: 220px;
+        display: none;
+        z-index: 20;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+      }
+
+      #menu-panel.open {
+        display: block;
+      }
+
+      .menu-section-title {
+        margin-bottom: 10px;
+        font-size: 14px;
+        color: #ffd700;
+      }
+
+      #hint-button {
         background: rgba(255, 153, 0, 0.9);
         padding: 10px 16px;
         border-radius: 6px;
@@ -692,9 +654,6 @@
       }
 
       #card-viewer-button {
-        position: absolute;
-        bottom: 20%;
-        left: 1%;
         background: rgba(96, 125, 139, 0.9);
         padding: 10px 16px;
         border-radius: 6px;
@@ -712,33 +671,15 @@
         transform: translateY(-2px);
       }
 
-      /* ===== CONTROL PANEL (for mockup testing) ===== */
-      #control-panel {
-        position: fixed;
-        top: 180px;
-        right: 20px;
-        background: rgba(0, 0, 0, 0.95);
-        padding: 15px;
-        border-radius: 8px;
-        border: 2px solid #666;
-        z-index: 1000;
-        min-width: 200px;
-      }
-
-      #control-panel h3 {
-        margin-bottom: 10px;
-        font-size: 14px;
-        color: #ffd700;
-      }
-
-      #control-panel label {
+      /* ===== MOCKUP CONTROLS ===== */
+      .mockup-controls label {
         display: block;
         margin-bottom: 8px;
         font-size: 12px;
       }
 
-      #control-panel select,
-      #control-panel button {
+      .mockup-controls select,
+      .mockup-controls button {
         width: 100%;
         padding: 6px;
         margin-top: 4px;
@@ -749,22 +690,64 @@
         font-size: 11px;
       }
 
-      #control-panel button {
+      .mockup-controls button {
         margin-top: 10px;
         cursor: pointer;
       }
 
-      #control-panel button:hover {
+      .mockup-controls button:hover {
         background: #444;
+      }
+
+      #side-panel {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: var(--side-panel-width);
+        height: 100%;
+        padding: 68px 16px 16px;
+        background: linear-gradient(180deg, rgba(17, 28, 22, 0.92) 0%, rgba(11, 18, 14, 0.96) 100%);
+        border-left: 2px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        z-index: 5;
+      }
+
+      .side-panel-section {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 12px;
+      }
+
+      .side-panel-title {
+        font-size: 11px;
+        font-weight: bold;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: #cfd8d3;
+        margin-bottom: 10px;
+      }
+
+      .side-panel-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .side-panel-actions > div {
+        position: static;
+        min-width: 0;
+        width: 100%;
       }
 
       /* ===== EVENT LOG ===== */
       #event-log {
-        position: absolute;
-        bottom: 2%;
-        left: 1%;
-        width: 160px;
-        max-height: 120px;
+        position: static;
+        width: 100%;
+        max-height: none;
+        min-height: 180px;
         background: rgba(0, 0, 0, 0.85);
         padding: 10px;
         border-radius: 6px;
@@ -786,12 +769,6 @@
   <body>
     <div id="game-container">
       <div id="game-table">
-        <!-- Walls -->
-        <div class="wall wall-east" id="wall-east"></div>
-        <div class="wall wall-north" id="wall-north"></div>
-        <div class="wall wall-west" id="wall-west"></div>
-        <div class="wall wall-south" id="wall-south"></div>
-
         <!-- Discard Floor -->
         <div id="discard-floor"></div>
 
@@ -803,11 +780,6 @@
           <div id="player-hand">
             <!-- Player's tiles will appear here -->
           </div>
-        </div>
-
-        <!-- Action Bar -->
-        <div id="action-bar">
-          <!-- Buttons will be populated by JavaScript based on game state -->
         </div>
 
         <!-- Opponent Racks -->
@@ -866,6 +838,35 @@
         <div id="hud">
           <div id="game-menu">☰ Menu</div>
 
+          <div id="menu-panel">
+            <div class="menu-section-title">Mockup Controls</div>
+
+            <div class="mockup-controls">
+              <label>
+                Game Phase:
+                <select id="phase-select">
+                  <option value="charleston">Charleston</option>
+                  <option value="playing" selected>Playing</option>
+                  <option value="call-window">Call Window</option>
+                </select>
+              </label>
+
+              <label>
+                Discard Style:
+                <select id="discard-style">
+                  <option value="unsorted">Unsorted (Chronological)</option>
+                  <option value="sorted">Sorted (By Suit)</option>
+                </select>
+              </label>
+
+              <button id="toggle-charleston">Toggle Charleston Tracker</button>
+              <button id="add-exposure">Add Exposed Meld</button>
+              <button id="clear-exposure">Clear Exposures</button>
+              <button id="add-more-discards">Add 20 More Discards</button>
+              <button id="clear-discards">Clear Discards</button>
+            </div>
+          </div>
+
           <div id="wall-counter" class="safe">Tiles Remaining: <span id="wall-count">72</span></div>
 
           <div id="charleston-tracker">
@@ -873,66 +874,54 @@
             <div class="charleston-direction">→</div>
           </div>
 
-          <div id="wind-indicator">
-            <div class="wind-compass">
-              <div class="wind-position wind-e dealer active">
-                <span class="wind-label">E</span>
-                <span class="wind-player-name">Bot - Easy</span>
+          <div id="side-panel">
+            <div class="side-panel-section">
+              <div class="side-panel-title">Turn</div>
+              <div id="wind-indicator">
+                <div class="wind-compass">
+                  <div class="wind-position wind-e dealer active">
+                    <span class="wind-label">E</span>
+                    <span class="wind-player-name">Bot - Easy</span>
+                  </div>
+                  <div class="wind-position wind-s">
+                    <span class="wind-label">S</span>
+                    <span class="wind-player-name">You</span>
+                  </div>
+                  <div class="wind-position wind-w">
+                    <span class="wind-label">W</span>
+                    <span class="wind-player-name">Bot - Hard</span>
+                  </div>
+                  <div class="wind-position wind-n">
+                    <span class="wind-label">N</span>
+                    <span class="wind-player-name">Bot - Med</span>
+                  </div>
+                </div>
               </div>
-              <div class="wind-position wind-s">
-                <span class="wind-label">S</span>
-                <span class="wind-player-name">You</span>
+            </div>
+
+            <div class="side-panel-section">
+              <div class="side-panel-title">Actions</div>
+              <div class="side-panel-actions">
+                <div id="action-bar">
+                  <!-- Buttons will be populated by JavaScript based on game state -->
+                </div>
+                <div id="hint-button">💡 Hints</div>
+                <div id="card-viewer-button">📋 View Card</div>
               </div>
-              <div class="wind-position wind-w">
-                <span class="wind-label">W</span>
-                <span class="wind-player-name">Bot - Hard</span>
-              </div>
-              <div class="wind-position wind-n">
-                <span class="wind-label">N</span>
-                <span class="wind-player-name">Bot - Med</span>
+            </div>
+
+            <div class="side-panel-section">
+              <div class="side-panel-title">Game Log</div>
+              <div id="event-log">
+                <div class="event-entry">Game started</div>
+                <div class="event-entry">East rolled 7</div>
+                <div class="event-entry">Wall broken at position 7</div>
+                <div class="event-entry">Tiles dealt to all players</div>
               </div>
             </div>
           </div>
-
-          <div id="hint-button">💡 Hints</div>
-          <div id="card-viewer-button">📋 View Card</div>
-
-          <div id="event-log">
-            <div class="event-entry">Game started</div>
-            <div class="event-entry">East rolled 7</div>
-            <div class="event-entry">Wall broken at position 7</div>
-            <div class="event-entry">Tiles dealt to all players</div>
-          </div>
         </div>
       </div>
-    </div>
-
-    <!-- Control Panel for Testing -->
-    <div id="control-panel">
-      <h3>Mockup Controls</h3>
-
-      <label>
-        Game Phase:
-        <select id="phase-select">
-          <option value="charleston">Charleston</option>
-          <option value="playing" selected>Playing</option>
-          <option value="call-window">Call Window</option>
-        </select>
-      </label>
-
-      <label>
-        Discard Style:
-        <select id="discard-style">
-          <option value="unsorted">Unsorted (Chronological)</option>
-          <option value="sorted">Sorted (By Suit)</option>
-        </select>
-      </label>
-
-      <button id="toggle-charleston">Toggle Charleston Tracker</button>
-      <button id="add-exposure">Add Exposed Meld</button>
-      <button id="clear-exposure">Clear Exposures</button>
-      <button id="add-more-discards">Add 20 More Discards</button>
-      <button id="clear-discards">Clear Discards</button>
     </div>
 
     <script>
@@ -972,17 +961,6 @@
       }
 
       // ===== INITIALIZATION =====
-      function initWalls() {
-        ['east', 'north', 'west', 'south'].forEach((position) => {
-          const wall = document.getElementById(`wall-${position}`);
-          for (let i = 0; i < 19; i++) {
-            const stack = document.createElement('div');
-            stack.className = 'wall-stack';
-            wall.appendChild(stack);
-          }
-        });
-      }
-
       function createTile(value, suit) {
         const tile = document.createElement('div');
         tile.className = `tile tile-${suit}`;
@@ -1170,6 +1148,19 @@
       }
 
       // ===== EVENT HANDLERS =====
+      const gameMenu = document.getElementById('game-menu');
+      const menuPanel = document.getElementById('menu-panel');
+
+      gameMenu.addEventListener('click', () => {
+        menuPanel.classList.toggle('open');
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!menuPanel.contains(event.target) && !gameMenu.contains(event.target)) {
+          menuPanel.classList.remove('open');
+        }
+      });
+
       document.getElementById('phase-select').addEventListener('change', (e) => {
         const tracker = document.getElementById('charleston-tracker');
         if (e.target.value === 'charleston') {
@@ -1192,8 +1183,6 @@
 
         for (let i = 0; i < 3; i++) {
           const tile = createTile('DG', 'dragon');
-          tile.style.width = '36px';
-          tile.style.height = '51px'; // 7:10 ratio
           tile.style.cursor = 'default';
           tile.onclick = null;
           meldSet.appendChild(tile);
@@ -1257,7 +1246,6 @@
       });
 
       // ===== INITIALIZE ON LOAD =====
-      initWalls();
       initPlayerHand();
       initOpponentHands();
       initDiscardFloor();
