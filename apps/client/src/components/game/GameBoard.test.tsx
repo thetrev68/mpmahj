@@ -79,7 +79,7 @@ describe('GameBoard', () => {
 
     render(<GameBoard initialState={fixtures.gameStates.playingDrawing} ws={mockWs} />);
 
-    expect(screen.getByTestId('game-board-layout')).toHaveClass('pt-16');
+    expect(screen.getByTestId('game-board-layout')).toHaveClass('pt-4');
   });
 
   it('renders the interactive right rail layout contract', () => {
@@ -91,8 +91,9 @@ describe('GameBoard', () => {
       'right-rail',
       'hidden',
       'lg:flex',
+      'lg:w-[var(--right-rail-w)]',
       'lg:min-w-[var(--right-rail-w)]',
-      'lg:flex-1',
+      'lg:flex-none',
       'lg:flex-col',
       'lg:rounded-l-2xl',
       'lg:border-l',
@@ -135,6 +136,12 @@ describe('GameBoard', () => {
 
     render(<GameBoard initialState={fixtures.gameStates.charlestonFirstRight} ws={mockWs} />);
 
+    expect(screen.getByTestId('charleston-board-cap')).toBeInTheDocument();
+    expect(screen.getByTestId('charleston-board-cap')).toHaveClass(
+      'absolute',
+      'inset-x-0',
+      'top-0'
+    );
     expect(screen.getByTestId('top-chrome-status-stack')).toBeInTheDocument();
     expect(screen.getByTestId('charleston-top-chrome-slot')).toBeInTheDocument();
     expect(screen.getByTestId('wall-counter')).toBeInTheDocument();
@@ -143,6 +150,9 @@ describe('GameBoard', () => {
     expect(
       within(screen.getByTestId('charleston-top-chrome-slot')).getByTestId('charleston-tracker')
     ).toBeInTheDocument();
+    expect(screen.getByTestId('square-board-container')).toContainElement(
+      screen.getByTestId('charleston-top-chrome-slot')
+    );
   });
 
   it('renders the call-window prompt only once at board level', () => {

@@ -116,7 +116,7 @@ describe('Tile Component', () => {
 
   describe('Size Variants - P0 Tests', () => {
     test.each([
-      ['small', 4, 'tile-small', { width: '32px', height: '46px' }],
+      ['small', 4, 'tile-small', { width: '36px', height: '52px' }],
       ['medium', 6, 'tile-medium', { width: '63px', height: '90px' }],
       ['large', 11, 'tile-large', { width: '80px', height: '114px' }],
     ] as const)('applies %s size variant', (size, tile, className, style) => {

@@ -455,12 +455,16 @@ describe('CharlestonPhase', () => {
       expect(screen.getByTestId('opponent-slot-south')).toHaveClass(
         'col-start-3',
         'row-start-2',
-        'justify-end'
+        'justify-end',
+        'items-start',
+        'self-start'
       );
       expect(screen.getByTestId('opponent-slot-north')).toHaveClass(
         'col-start-1',
         'row-start-2',
-        'justify-start'
+        'justify-start',
+        'items-start',
+        'self-start'
       );
     });
 
@@ -481,7 +485,7 @@ describe('CharlestonPhase', () => {
       );
     });
 
-    test('renders the shared Charleston board-region grid', () => {
+    test('renders the shared Charleston board frame with a center discard zone', () => {
       render(
         <CharlestonPhase
           gameState={mockGameState}
@@ -490,10 +494,16 @@ describe('CharlestonPhase', () => {
         />
       );
 
-      expect(screen.getByTestId('charleston-board-regions')).toHaveClass(
+      expect(screen.getByTestId('charleston-board-regions')).toHaveClass('absolute', 'inset-0');
+      expect(screen.getByTestId('charleston-board-frame')).toHaveClass(
         'grid',
         'grid-cols-[minmax(var(--charleston-col-side),auto)_minmax(0,1fr)_minmax(var(--charleston-col-side),auto)]',
-        'grid-rows-[minmax(var(--charleston-row-top),auto)_minmax(0,1fr)_auto]'
+        'grid-rows-[auto_minmax(0,1fr)_auto]'
+      );
+      expect(screen.getByTestId('opponent-slot-west')).toHaveClass('col-span-3', 'row-start-1');
+      expect(screen.getByTestId('charleston-discard-zone-region')).toHaveAttribute(
+        'data-board-region',
+        'discard-zone-region'
       );
       expect(screen.getByTestId('player-zone-region')).toHaveClass('col-span-3', 'row-start-3');
     });

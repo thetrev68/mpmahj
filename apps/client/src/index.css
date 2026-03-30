@@ -15,8 +15,8 @@
     );
 
     /* ── Layout sizing tokens ── */
-    --tile-w-sm: 32px;
-    --tile-h-sm: 46px;
+    --tile-w-sm: 36px;
+    --tile-h-sm: 52px;
     --tile-w-md: 63px;
     --tile-h-md: 90px;
     --tile-w-lg: 80px;
@@ -31,13 +31,13 @@
     --layout-pad-x: 1rem;
     --right-rail-w: 24rem;
     --board-max-w: 1200px;
-    --board-top-offset: 5rem;
+    --board-top-offset: 1rem;
     --board-right-reserve: calc(2 * var(--layout-pad-x) + var(--right-rail-w));
 
-    --charleston-col-side: 5.5rem;
-    --charleston-row-top: 6.5rem;
-    --player-zone-actions-min: 17rem;
-    --player-zone-actions-max: 20rem;
+    --charleston-col-side: 7rem;
+    --charleston-row-top: 7.25rem;
+    --player-zone-actions-min: 15rem;
+    --player-zone-actions-max: 18rem;
     --player-rack-content-h: 198px;
 
     --background: 0 0% 100%;

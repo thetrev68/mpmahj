@@ -11,6 +11,7 @@ import { TileImage } from './TileImage';
 import { getTileName, isValidTile, isJoker } from '@/lib/utils/tileUtils';
 import { cn } from '@/lib/utils';
 import { useAnimationSettings } from '@/hooks/useAnimationSettings';
+import { getCssVarPx } from '@/lib/utils/cssVar';
 import './Tile.css';
 
 interface TileProps {
@@ -149,17 +150,23 @@ export const Tile = memo<TileProps>(
 
     // Compute inline styles for testing (jsdom doesn't compute CSS properly)
     const inlineStyles: CSSProperties = {};
+    const smallTileWidth = getCssVarPx('--tile-w-sm', 36);
+    const smallTileHeight = getCssVarPx('--tile-h-sm', 52);
+    const mediumTileWidth = getCssVarPx('--tile-w-md', 63);
+    const mediumTileHeight = getCssVarPx('--tile-h-md', 90);
+    const largeTileWidth = getCssVarPx('--tile-w-lg', 80);
+    const largeTileHeight = getCssVarPx('--tile-h-lg', 114);
 
     // Size styles
     if (size === 'small') {
-      inlineStyles.width = '32px';
-      inlineStyles.height = '46px';
+      inlineStyles.width = `${smallTileWidth}px`;
+      inlineStyles.height = `${smallTileHeight}px`;
     } else if (size === 'medium') {
-      inlineStyles.width = '63px';
-      inlineStyles.height = '90px';
+      inlineStyles.width = `${mediumTileWidth}px`;
+      inlineStyles.height = `${mediumTileHeight}px`;
     } else if (size === 'large') {
-      inlineStyles.width = '80px';
-      inlineStyles.height = '114px';
+      inlineStyles.width = `${largeTileWidth}px`;
+      inlineStyles.height = `${largeTileHeight}px`;
     }
 
     // Build transform value

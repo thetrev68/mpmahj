@@ -403,17 +403,21 @@ export function CharlestonPhase({
   ]);
 
   const opponentSlotClassByPosition: Record<'top' | 'left' | 'right', string> = {
-    top: 'col-start-2 row-start-1 flex justify-center self-start',
-    left: 'col-start-1 row-start-2 flex items-center justify-start self-stretch',
-    right: 'col-start-3 row-start-2 flex items-center justify-end self-stretch',
+    top: 'col-span-3 row-start-1 flex justify-center self-start',
+    left: 'col-start-1 row-start-2 flex items-start justify-start self-start',
+    right: 'col-start-3 row-start-2 flex items-start justify-end self-start',
   };
 
   return (
     <>
       <div
-        className="pointer-events-none absolute inset-0 grid grid-cols-[minmax(var(--charleston-col-side),auto)_minmax(0,1fr)_minmax(var(--charleston-col-side),auto)] grid-rows-[minmax(var(--charleston-row-top),auto)_minmax(0,1fr)_auto] gap-x-3 px-3 pb-4 pt-24 lg:gap-x-4 lg:px-4 lg:pt-28"
+        className="pointer-events-none absolute inset-0 px-3 pb-4 pt-1 lg:px-4 lg:pt-2"
         data-testid="charleston-board-regions"
       >
+        <div
+          className="grid h-full grid-cols-[minmax(var(--charleston-col-side),auto)_minmax(0,1fr)_minmax(var(--charleston-col-side),auto)] grid-rows-[auto_minmax(0,1fr)_auto] gap-x-3 gap-y-3 lg:gap-x-4 lg:gap-y-4"
+          data-testid="charleston-board-frame"
+        >
         {/* Opponent racks — face-down tiles for each opponent */}
         {gameState.players
           .filter((p) => p.seat !== gameState.your_seat)
@@ -438,6 +442,17 @@ export function CharlestonPhase({
               </div>
             );
           })}
+
+        <div
+          className="pointer-events-none col-start-2 row-start-2 flex min-h-0 items-stretch justify-center"
+          data-testid="charleston-discard-zone-region"
+          data-board-region="discard-zone-region"
+        >
+          <div
+            className="h-full w-full rounded-[3rem] border-4 border-black/75 bg-transparent"
+            aria-hidden="true"
+          />
+        </div>
 
         <div
           className="pointer-events-auto col-span-3 row-start-3 self-end"
@@ -529,6 +544,7 @@ export function CharlestonPhase({
               />
             }
           />
+        </div>
         </div>
       </div>
 

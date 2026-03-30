@@ -103,7 +103,7 @@ export const ActionBar: FC<ActionBarProps> = ({
   return (
     <div
       className={cn(
-        'relative flex h-full w-full',
+        'relative flex w-full',
         'bg-black/85 rounded-lg shadow-lg',
         'px-4 py-3',
         'min-w-[180px]'
@@ -113,7 +113,7 @@ export const ActionBar: FC<ActionBarProps> = ({
       role="toolbar"
       aria-label="Game actions"
     >
-      <div className="flex min-h-full flex-1 flex-col gap-2.5">
+      <div className="flex min-h-0 flex-1 flex-col gap-2.5">
         {selectionSummary ? (
           <div
             className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-white"

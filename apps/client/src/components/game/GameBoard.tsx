@@ -365,7 +365,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
         </div>
       )}
 
-      <div className="flex h-full w-full px-4 pb-4 pt-16 lg:pr-4" data-testid="game-board-layout">
+      <div className="flex h-full w-full px-4 pb-4 pt-4 lg:pr-4" data-testid="game-board-layout">
         <div
           className="relative flex h-full min-w-0 w-full flex-1 lg:items-stretch"
           data-testid="board-layout-shell"
@@ -375,7 +375,14 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             data-testid="square-board-container"
           >
             <div
-              className={`pointer-events-none absolute inset-x-0 top-0 ${BOARD_LAYERS.chrome} flex flex-col gap-2 px-3 pt-3 lg:px-4 lg:pt-4`}
+              className={`pointer-events-none absolute inset-x-0 top-0 ${BOARD_LAYERS.chrome} px-3 pt-0 lg:px-4 lg:pt-0`}
+              data-testid="charleston-board-cap"
+              data-board-layer={BOARD_LAYERS.chrome}
+            >
+              <div ref={setCharlestonTopChromeSlot} data-testid="charleston-top-chrome-slot" />
+            </div>
+            <div
+              className={`pointer-events-none absolute inset-x-0 top-0 ${BOARD_LAYERS.chrome} flex flex-col gap-2 px-3 pt-0 lg:px-4 lg:pt-0`}
               data-testid="top-chrome-stack"
               data-board-layer={BOARD_LAYERS.chrome}
             >
@@ -419,7 +426,6 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
                 className="pointer-events-none flex flex-col gap-2"
                 data-testid="top-chrome-status-stack"
               >
-                <div ref={setCharlestonTopChromeSlot} data-testid="charleston-top-chrome-slot" />
                 <WallCounter
                   remainingTiles={gameState.wall_tiles_remaining}
                   totalTiles={totalTiles}
@@ -469,7 +475,7 @@ export const GameBoard: FC<GameBoardProps> = ({ initialState, ws, socket }) => {
             </ErrorBoundary>
           </div>
           <div
-            className="right-rail hidden lg:flex lg:min-w-[var(--right-rail-w)] lg:flex-1 lg:flex-col lg:self-stretch lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card dark:lg:bg-slate-950"
+            className="right-rail hidden lg:flex lg:w-[var(--right-rail-w)] lg:min-w-[var(--right-rail-w)] lg:flex-none lg:flex-col lg:self-stretch lg:overflow-hidden lg:rounded-l-2xl lg:border-l lg:border-border/70 lg:bg-card dark:lg:bg-slate-950"
             data-testid="right-rail"
           >
             <div

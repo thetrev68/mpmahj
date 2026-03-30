@@ -20,8 +20,19 @@ describe('ActionBar', () => {
   test('preserves action-bar testid on the relative full-width root', () => {
     renderWithProviders(<ActionBar {...defaultProps} />);
 
-    expect(screen.getByTestId('action-bar')).toHaveClass('relative', 'w-full', 'h-full');
+    expect(screen.getByTestId('action-bar')).toHaveClass('relative', 'w-full');
+    expect(screen.getByTestId('action-bar')).not.toHaveClass('h-full');
     expect(screen.getByTestId('action-bar')).not.toHaveClass('fixed');
+  });
+
+  test('uses a compact two-button row for Charleston actions', () => {
+    renderWithProviders(<ActionBar {...defaultProps} />);
+
+    expect(screen.getByTestId('charleston-action-button-row')).toHaveClass(
+      'grid',
+      'grid-cols-2'
+    );
+    expect(screen.getByTestId('action-instruction')).toHaveClass('text-xs', 'leading-tight');
   });
 
   test('does not render undo-related UI', () => {

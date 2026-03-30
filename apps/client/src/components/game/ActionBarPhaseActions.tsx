@@ -81,14 +81,37 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   const instruction = (
     <div
       className={cn(
-        'text-sm',
+        'text-xs leading-tight',
         isCharleston
           ? 'text-left font-medium text-foreground/75 dark:text-slate-200/90'
           : 'text-center text-gray-300'
       )}
       data-testid="action-instruction"
+      style={
+        isCharleston
+          ? {
+              display: '-webkit-box',
+              WebkitBoxOrient: 'vertical',
+              WebkitLineClamp: 2,
+              overflow: 'hidden',
+            }
+          : undefined
+      }
     >
       {instructionText}
+    </div>
+  );
+
+  const renderCharlestonButtonRow = (
+    proceedDisabled: boolean,
+    onProceed: () => void,
+    proceedLabel: string
+  ) => (
+    <div className="grid grid-cols-2 gap-2" data-testid="charleston-action-button-row">
+      {renderProceedButton(proceedDisabled, onProceed, 'proceed-button', proceedLabel)}
+      {renderMahjongButton(disabled || isBusy || !canDeclareMahjong, {
+        demoted: !canDeclareMahjong,
+      })}
     </div>
   );
 
@@ -162,10 +185,6 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
   }
 
   if (typeof phase === 'object' && phase !== null && 'Charleston' in phase) {
-    const mahjongButton = renderMahjongButton(disabled || isBusy || !canDeclareMahjong, {
-      demoted: !canDeclareMahjong,
-    });
-
     if (phase.Charleston === 'CourtesyAcross') {
       const canPass =
         onCourtesyPassSubmit !== undefined &&
@@ -178,13 +197,11 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
       return (
         <>
           {instruction}
-          {renderProceedButton(
+          {renderCharlestonButtonRow(
             disabled || hasSubmittedPass || !canPass,
             handleCourtesyProceed,
-            'proceed-button',
             'Proceed with courtesy pass'
           )}
-          {mahjongButton}
         </>
       );
     }
@@ -195,13 +212,11 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
       return (
         <>
           {instruction}
-          {renderProceedButton(
+          {renderCharlestonButtonRow(
             disabled || suppressCharlestonPassAction || !canVote,
             onVoteCharleston,
-            'proceed-button',
             'Proceed with Charleston vote'
           )}
-          {mahjongButton}
         </>
       );
     }
@@ -212,13 +227,11 @@ export const ActionBarPhaseActions: FC<ActionBarPhaseActionsProps> = ({
     return (
       <>
         {instruction}
-        {renderProceedButton(
+        {renderCharlestonButtonRow(
           passButtonDisabled,
           onCommitCharlestonPass,
-          'proceed-button',
           'Proceed with Charleston pass'
         )}
-        {mahjongButton}
       </>
     );
   }

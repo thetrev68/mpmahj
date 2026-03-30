@@ -15,7 +15,8 @@ describe('PlayerZone', () => {
 
     const zone = screen.getByTestId('player-zone');
     expect(zone).toBeInTheDocument();
-    expect(zone).toHaveClass('relative', 'w-full', 'rounded-[1.75rem]');
+    expect(zone).toHaveClass('relative', 'w-full');
+    expect(zone).not.toHaveClass('rounded-[1.75rem]');
     expect(zone).toHaveAttribute('data-board-region', 'south-interaction-region');
     expect(zone).toHaveAttribute('data-board-layer', 'z-10');
     expect(zone).not.toHaveClass('fixed');
@@ -113,18 +114,20 @@ describe('PlayerZone', () => {
 
     expect(screen.getByTestId('player-zone-layout')).toHaveClass(
       'grid',
-      'lg:grid-cols-[minmax(0,1fr)_minmax(var(--player-zone-actions-min),var(--player-zone-actions-max))]'
+      'lg:grid-cols-[minmax(0,auto)_minmax(var(--player-zone-actions-min),var(--player-zone-actions-max))]',
+      'lg:justify-center'
     );
     expect(screen.getByTestId('player-zone-actions-slot')).toHaveClass(
       'flex-col',
       'items-stretch',
-      'justify-start'
+      'justify-start',
+      'self-start'
     );
     expect(screen.getByTestId('player-zone-actions-slot')).not.toHaveClass(
       'lg:absolute',
       'lg:right-[108px]'
     );
-    expect(screen.getByTestId('player-zone-rack-slot')).toHaveClass('lg:col-span-2');
+    expect(screen.getByTestId('player-zone-rack-slot')).toHaveClass('lg:col-span-2', 'lg:px-12');
   });
 
   test('uses a custom data-testid when provided', () => {

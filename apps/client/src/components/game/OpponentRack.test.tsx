@@ -335,8 +335,8 @@ describe('OpponentRack', () => {
 
     test('uses a 16-tile rack shell span for the top opponent (AC-3)', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'North' })} yourSeat="South" />);
-      // 32px * 16 + 2px * 15 = 542px
-      expect(screen.getByTestId('opponent-rack-shell-north').style.width).toBe('542px');
+      // 36px * 16 + 2px * 15 = 606px
+      expect(screen.getByTestId('opponent-rack-shell-north').style.width).toBe('606px');
     });
 
     test('centers concealed tiles within the opponent rack shell (AC-4)', () => {
@@ -351,10 +351,10 @@ describe('OpponentRack', () => {
 
     test('uses span as vertical height for side racks to preserve top-rack spacing cadence after rotation', () => {
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'East' })} yourSeat="South" />);
-      expect(screen.getByTestId('opponent-rack-shell-east').style.height).toBe('542px');
+      expect(screen.getByTestId('opponent-rack-shell-east').style.height).toBe('606px');
 
       renderWithProviders(<OpponentRack player={makePlayer({ seat: 'West' })} yourSeat="South" />);
-      expect(screen.getByTestId('opponent-rack-shell-west').style.height).toBe('542px');
+      expect(screen.getByTestId('opponent-rack-shell-west').style.height).toBe('606px');
     });
 
     test('renders north staging row after the wooden enclosure in DOM order', () => {

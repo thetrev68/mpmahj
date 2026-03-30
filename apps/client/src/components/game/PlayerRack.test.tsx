@@ -171,7 +171,10 @@ describe('PlayerRack Component', () => {
         <PlayerRack tiles={charlestonHandInstances} mode="charleston" onTileSelect={vi.fn()} />
       );
 
-      expect(screen.getByTestId('player-rack-viewport')).toHaveClass('w-full', 'max-w-full');
+      expect(screen.getByTestId('player-rack-viewport')).toHaveClass(
+        'w-full',
+        'max-w-[58rem]'
+      );
       expect(screen.getByTestId('player-rack-viewport')).toHaveAttribute(
         'data-board-region',
         'player-rack-containment'

@@ -217,7 +217,7 @@ export const PlayerRack: FC<PlayerRackProps> = ({
       {/* Tile rack — wooden holder */}
       <div
         ref={rackViewportRef}
-        className="relative w-full max-w-full overflow-visible"
+        className="relative w-full max-w-[58rem] overflow-visible"
         data-testid="player-rack-viewport"
         data-board-region="player-rack-containment"
         style={{ height: `${rackContentHeight * rackScale}px` }}
