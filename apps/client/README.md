@@ -1,94 +1,77 @@
-# American Mahjong (NMJL) - Frontend
+# American Mahjong Frontend
 
-This is the React + TypeScript frontend for the American Mahjong (NMJL) game. It uses Vite as the build tool, Tailwind CSS for styling, and shadcn/ui components.
+This is the React + TypeScript client app for the repo. It is a server-authoritative UI that talks
+to the Rust backend over WebSocket and consumes generated TypeScript bindings from
+`mahjong_core`.
 
 ## Quick Start
 
-### Prerequisites
+Prerequisites:
 
-- Node.js >= 18.0.0
-- npm >= 9.0.0
+- Node.js >= 18
+- npm >= 9
 
-### Installation
+Install from the repo root:
 
 ```bash
-cd apps/client
 npm install
 ```
 
-### Development
+Run just the client:
 
 ```bash
-# Start development server (http://localhost:5173)
-npm run dev
-
-# Run tests in watch mode
-npm run test
-
-# Run tests once
-npm run test:run
-
-# Generate coverage report
-npm run test:coverage
-
-# Build for production
-npm run build
+npm run dev --workspace=client
 ```
 
-## Project Structure
+Most local work is easier from the repo root with the monorepo scripts in [README.md](../../README.md).
+
+## Useful Commands
+
+```bash
+# From repo root
+npm run dev --workspace=client
+npm run type-check --workspace=client
+npm run test:run --workspace=client
+npm run test:e2e:recovery --workspace=client
+npm run build --workspace=client
+```
+
+## App Structure
 
 ```text
 apps/client/src/
 ├── components/
-│   ├── ui/           # shadcn/ui components (buttons, dialogs, inputs, etc.)
-│   └── game/         # Game-specific components (Tile, GameBoard, etc.)
-├── features/         # Feature modules (game, room)
-├── hooks/            # Custom hooks (useGameSocket, useTileSelection)
-├── lib/              # Utility functions
-├── pages/            # Route pages (LobbyScreen)
-├── stores/           # Zustand state management (roomStore)
-├── test/             # Test infrastructure
-│   ├── fixtures/     # Test data (game states, hands, events)
-│   ├── mocks/        # Mock implementations (WebSocket)
-│   └── test-utils.tsx # Testing utilities
-└── types/bindings/   # Auto-generated TypeScript types from Rust
+│   ├── game/         # Game board, phase UI, overlays, rail, tiles
+│   └── ui/           # Shared UI primitives
+├── features/         # Integration-style feature tests and feature modules
+├── hooks/            # State and protocol hooks
+├── lib/              # Protocol helpers, event handling, shared logic
+├── pages/            # Top-level screens
+├── stores/           # Zustand stores
+├── test/             # Shared test helpers, mocks, fixtures
+└── types/bindings/   # Generated Rust -> TypeScript bindings
 ```
 
-## Technology Stack
+## Current Architecture Notes
 
-- **Framework**: React 18 + TypeScript
-- **Build Tool**: Vite
-- **Styling**: Tailwind CSS v3
-- **UI Components**: shadcn/ui
-- **Testing**: Vitest + React Testing Library
-- **State Management**: Zustand (lightweight, server-driven)
-- **WebSocket**: Custom hook (`useGameSocket`)
-
-## Key Features
-
-- Real-time multiplayer via WebSocket
-- Tile rendering and selection
-- Game board with wall and player hands
-- Charleston phase (tile passing)
-- Main gameplay (drawing, discarding, calling)
-- Win validation against NMJL rules
-- AI hints at various difficulty levels
+- React 19 + Vite
+- Tailwind CSS + shadcn/ui primitives
+- Zustand for UI/client-side state
+- WebSocket transport via the `useGameSocket` stack
+- Generated protocol types under `src/types/bindings/generated/`
+- Frontend docs live in `docs/implementation/frontend/`
 
 ## Testing
 
-The frontend has comprehensive test infrastructure:
+- Unit/component/integration tests: Vitest + React Testing Library
+- Browser/e2e coverage: Playwright
+- Shared test docs: [src/test/README.md](./src/test/README.md)
 
-- **Test Setup**: Vitest + React Testing Library
-- **Mock Utilities**: WebSocket and Zustand store mocks
-- **Fixtures**: 10+ test fixtures for game states, hands, and events
-- **Coverage Goals**: 80%+ for stores/hooks, 70%+ for components
+The repo-level `npm run check:all` command is the main validation gate.
 
-For more details, see [TESTING.md](TESTING.md) and the [test README](src/test/README.md).
+## Documentation
 
-## Backend Integration
-
-The frontend communicates with the Rust backend via WebSocket using auto-generated TypeScript bindings. For details on the protocol, see the main [README.md](../../README.md#websocket-protocol).
-
-## Contributing
-
-See the main [README.md](../../README.md#contributing) for contribution guidelines.
+- Repo source of truth: [README.md](../../README.md)
+- Current frontend doc map: [docs/implementation/frontend/README.md](../../docs/implementation/frontend/README.md)
+- Current copy contract: [docs/implementation/frontend/messaging-reference.md](../../docs/implementation/frontend/messaging-reference.md)
+- Historical frontend stories/audits: `.archive/docs/implementation/frontend/`

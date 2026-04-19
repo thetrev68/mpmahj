@@ -5,8 +5,10 @@ Modern, cross-platform American Mahjong under NMJL rules, with a Rust backend an
 ## Quick Links
 
 - Assistant execution policy: [Agents.md](Agents.md)
+- Docs index: [docs/README.md](docs/README.md)
 - ADRs: [docs/adr/](docs/adr/)
-- Frontend refactor plan: [docs/implementation/frontend/FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md](docs/implementation/frontend/FRONTEND_REFACTOR_IMPLEMENTATION_PLAN.md)
+- Frontend docs/status: [docs/implementation/frontend/README.md](docs/implementation/frontend/README.md)
+- Current backlog: [TODO.md](TODO.md)
 
 ## Documentation Ownership & Freshness
 
@@ -17,6 +19,7 @@ Use this ownership model to avoid duplicated or stale guidance.
 | `README.md` | Technical source of truth (setup, architecture, workflows, commands) | Primary entrypoint for humans and assistants | 2026-03-06    |
 | `Agents.md` | AI execution policy only                                             | Intentionally short and procedural           | 2026-03-06    |
 | `CLAUDE.md` | Compatibility pointer                                                | Redirects older links to canonical docs      | 2026-03-06    |
+| `.archive/` | Historical plans, audits, and completed implementation notes         | Not a source of truth for current behavior   | 2026-04-19    |
 
 If information conflicts:
 
@@ -55,16 +58,16 @@ mpmahj/
 │   └── mahjong_ai/      # Bot strategies and analysis
 ├── data/                # NMJL card data (2017–2025)
 ├── docs/                # Architecture, ADRs, implementation docs
-├── PLANNING.md          # Product requirements and UX planning
 ├── Agents.md            # AI execution policy
+├── TODO.md              # Current backlog / follow-up work
 └── README.md            # Technical source of truth
 ```
 
 ## Current Status
 
 - Backend core and server are mature and heavily tested.
-- Frontend architecture refactor (Phases 0–9) is complete; Phase 10 is in progress.
-- Active work: feature implementation on top of the stabilized architecture.
+- Frontend architecture refactor and the March 2026 UI remediation batches are complete.
+- Active follow-up work is tracked in `TODO.md`; older frontend story/audit material lives in `.archive/`.
 
 ## Tech Stack
 
@@ -219,8 +222,12 @@ See these canonical implementation files:
 
 ## Additional Documentation
 
-- `docs/implementation/frontend/` for active frontend implementation docs
+- `docs/README.md` for the live documentation map
+- `docs/implementation/frontend/README.md` for the current frontend doc map
+- `docs/implementation/frontend/` for active frontend implementation references
 - `apps/client/README.md` for frontend app setup details
+- `docs/nmjl_mahjongg-rules.md` and `docs/nmjl_mahjongg_2025_card.md` for rules/card reference material
+- `.archive/docs/` for historical plans, audits, and completed implementation records
 
 ## Contributing
 

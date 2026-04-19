@@ -1,316 +1,56 @@
 # Frontend Implementation Guide
 
-**Purpose**: This guide ensures implementations align with the backend. Follow it strictly to avoid hallucinating event shapes or command structures.
-
----
+Purpose: keep frontend work aligned with the current Rust protocol and current repo state.
 
 ## Golden Rule
 
-**The TypeScript bindings are the source of truth.**
-
-Before implementing ANY feature, read the auto-generated TypeScript bindings at:
-
-```
-apps/client/src/types/bindings/generated/
-```
-
-These files are generated directly from Rust using `ts-rs` and are 100% accurate.
-
----
-
-## Implementation Checklist
-
-### Before Writing Any Code
-
-1. **Follow the TDD Protocol** in [Agents.md §7](../../../Agents.md) — produce a scope checklist and get approval before coding
-2. **Read the user story** in `docs/implementation/frontend/user-stories/US-XXX-*.md`
-3. **Read the relevant bindings**:
-   - `GameCommand.ts` - Commands you can send to the server
-   - `PublicEvent.ts` - Events broadcast to all players
-   - `PrivateEvent.ts` - Events sent only to specific players
-   - `AnalysisEvent.ts` - AI hints and hand analysis
-4. **Verify event shapes** in the user story's "Technical Details" section match the bindings
-5. **If they don't match, trust the bindings** - the documentation may be outdated
-
-### When Writing Tests
-
-1. **Copy event shapes from bindings**, not from documentation
-2. **Test scenarios should reference bindings** in their Prerequisites section
-3. **Use the mock WebSocket helpers** that match actual backend message structure
-
-### When Implementing Components
-
-1. **Import types from `@/types/bindings`**, not custom interfaces
-2. **Don't invent fields** - if a field isn't in the bindings, it doesn't exist
-3. **Handle all event variants** shown in the bindings
-
----
-
-## Quick Reference: Common Commands
-
-### Setup Phase
-
-```typescript
-// Only East can roll dice
-{
-  RollDice: {
-    player: 'East';
-  }
-} // Seat type
-```
-
-### Charleston Phase
-
-```typescript
-// Pass 3 tiles (standard pass)
-{
-  PassTiles: {
-    player: "East",          // Your seat
-    tiles: [0, 15, 33],      // Array of Tile (number 0-36)
-    blind_pass_count: null   // null for standard, 1-3 for blind pass
-  }
-}
-
-// Vote to continue/stop Charleston
-{
-  VoteCharleston: {
-    player: "East",
-    vote: "Continue"  // or "Stop"
-  }
-}
-```
-
-### Main Game Phase
-
-```typescript
-// Draw a tile
-{ DrawTile: { player: "East" } }
-
-// Discard a tile
-{ DiscardTile: { player: "East", tile: 15 } }
-
-// Declare intent to call during call window
-{
-  DeclareCallIntent: {
-    player: "South",
-    intent: "Meld"  // or "Mahjong"
-  }
-}
-
-// Pass on calling
-{ Pass: { player: "South" } }
-```
-
----
-
-## Quick Reference: Common Events
-
-### Setup Events (Public)
-
-```typescript
-{
-  DiceRolled: {
-    roll: 7;
-  }
-} // Just the sum (2-12)
-{
-  WallBroken: {
-    position: 42;
-  }
-} // Index where wall breaks
-```
-
-### Setup Events (Private)
-
-```typescript
-{ TilesDealt: { your_tiles: [0, 1, 5, 9, ...] } }  // Your initial hand
-```
-
-### Charleston Events (Public)
-
-```typescript
-{
-  CharlestonPhaseChanged: {
-    stage: 'FirstRight';
-  }
-}
-{
-  CharlestonTimerStarted: {
-    (stage, duration, started_at_ms, timer_mode);
-  }
-}
-{
-  PlayerReadyForPass: {
-    player: 'East';
-  }
-}
-{
-  TilesPassing: {
-    direction: 'Right';
-  }
-}
-```
-
-### Charleston Events (Private)
-
-```typescript
-{ TilesPassed: { player: "East", tiles: [0, 15, 33] } }
-{ TilesReceived: { player: "East", tiles: [5, 22, 28], from: "West" } }
-```
-
-### Main Game Events (Public)
-
-```typescript
-{ TurnChanged: { player: "East", stage: "Drawing" } }
-{ TileDrawnPublic: { remaining_tiles: 85 } }  // Tile hidden
-{ TileDiscarded: { player: "East", tile: 15 } }
-{ CallWindowOpened: { tile, discarded_by, can_call, timer, started_at_ms, timer_mode } }
-{ CallWindowClosed }
-```
-
-### Main Game Events (Private)
-
-```typescript
-{ TileDrawnPrivate: { tile: 22, remaining_tiles: 85 } }  // Your drawn tile
-```
-
----
-
-## Common Mistakes to Avoid
-
-### 1. Inventing Event Fields
-
-**Wrong** (hallucinated):
-
-```typescript
-{ DiceRolled: { roller: "East", dice: [3, 4], total: 7 } }
-```
-
-**Correct** (from bindings):
-
-```typescript
-{
-  DiceRolled: {
-    roll: 7;
-  }
-}
-```
-
-### 2. Adding Stage to Commands
-
-**Wrong** (hallucinated):
-
-```typescript
-{ PassTiles: { stage: "FirstRight", tiles: [...] } }
-```
-
-**Correct** (from bindings):
-
-```typescript
-{ PassTiles: { player: "East", tiles: [...], blind_pass_count: null } }
-```
-
-### 3. Inventing Events
-
-**Wrong** (doesn't exist):
-
-```typescript
-{ HandsDealt: { dealer: "East", tiles_per_player: 13 } }
-```
-
-**Correct** (actual private event):
-
-```typescript
-{ TilesDealt: { your_tiles: [...] } }
-```
-
-### 4. Wrong Tile Type
-
-**Wrong** (using strings):
-
-```typescript
-tiles: ['Bam1', 'Crak5', 'Dot9'];
-```
-
-**Correct** (Tile is number 0-36):
-
-```typescript
-tiles: [0, 13, 26]; // 1 Bam, 5 Crack, 9 Dot
-```
-
----
-
-## Testing Pattern
-
-### Step 1: Setup with correct initial state
-
-```typescript
-const mockWs = createMockWebSocket();
-const { result } = renderHook(() => useGameSocket());
-
-// Simulate being in the right phase
-mockWs.simulatePublicEvent({ CharlestonPhaseChanged: { stage: 'FirstRight' } });
-```
-
-### Step 2: Perform user action
-
-```typescript
-act(() => {
-  result.current.sendCommand({
-    PassTiles: { player: 'East', tiles: [0, 5, 10], blind_pass_count: null },
-  });
-});
-```
-
-### Step 3: Verify command sent
-
-```typescript
-expect(mockWs.lastSentCommand).toEqual({
-  PassTiles: { player: 'East', tiles: [0, 5, 10], blind_pass_count: null },
-});
-```
-
-### Step 4: Simulate server response
-
-```typescript
-mockWs.simulatePrivateEvent({ TilesPassed: { player: 'East', tiles: [0, 5, 10] } });
-```
-
-### Step 5: Assert UI state updated
-
-```typescript
-expect(screen.getByText(/Waiting for other players/)).toBeInTheDocument();
-```
-
----
+The generated TypeScript bindings are the source of truth.
+
+Read `apps/client/src/types/bindings/generated/` before implementing or testing any frontend
+behavior that depends on commands, events, or snapshot shape.
+
+## Current Workflow
+
+1. Follow the TDD protocol in [Agents.md](../../../Agents.md) when the task is user-story
+   implementation work.
+2. Check [docs/implementation/frontend/README.md](./README.md) to see which docs are still live.
+3. Check [TODO.md](../../../TODO.md) for open follow-up work.
+4. Read the relevant binding files before writing code or tests:
+   - `GameCommand.ts`
+   - `PublicEvent.ts`
+   - `PrivateEvent.ts`
+   - `AnalysisEvent.ts`
+   - `GameStateSnapshot.ts`
+5. Use current source files and tests as your implementation examples, not archived story docs.
+
+## Rules
+
+- Import protocol-facing types from `@/types/bindings`.
+- Do not invent fields, event variants, or command shapes.
+- If a live doc conflicts with bindings or runtime code, bindings/code win.
+- If historical context is needed, use `.archive/docs/implementation/frontend/` as reference only.
+
+## Testing Guidance
+
+- Copy payload shapes from the generated bindings or existing current tests.
+- Prefer existing mock WebSocket helpers and integration fixtures over handwritten ad hoc payloads.
+- When behavior is already covered by a current integration test, extend that test instead of
+  recreating a parallel scenario doc.
 
 ## Regenerating Bindings
-
-If you suspect bindings are outdated, regenerate them:
 
 ```bash
 cd crates/mahjong_core
 cargo test export_bindings
 ```
 
-This runs all `export_bindings_*` tests which write fresh TypeScript files.
+Generated output lands in `apps/client/src/types/bindings/generated/`.
 
----
+## Useful References
 
-## When Documentation Conflicts with Bindings
+- Current frontend doc index: [README.md](./README.md)
+- Current copy contract: [messaging-reference.md](./messaging-reference.md)
+- API docs output: `docs/tsdoc/` and Rustdoc generated by `npm run docs:api`
+- Binding source in Rust: `#[derive(TS)]` types under `crates/mahjong_core/src/`
 
-1. **Trust the bindings** - they're auto-generated from Rust
-2. **Update the documentation** to match the bindings
-3. **Never hallucinate fields** to make documentation work
-
----
-
-## Getting Help
-
-- **Backend types**: Run `cargo doc --open --no-deps` from repo root
-- **Binding source**: Look at `#[derive(TS)]` types in `crates/mahjong_core/src/`
-- **Architecture**: Read `docs/architecture/06-command-event-system-api-contract.md`
-
----
-
-**Last Updated**: 2026-02-05
+Last reviewed: 2026-04-19

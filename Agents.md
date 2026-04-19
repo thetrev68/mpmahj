@@ -2,6 +2,16 @@
 
 Purpose: define assistant execution policy for this repo. Keep this procedural. Put project context in `README.md`.
 
+## Documentation Source Order
+
+When documentation conflicts:
+
+1. Runtime code and generated bindings win.
+2. `README.md` is the repo-level technical source of truth.
+3. `TODO.md` is the current backlog.
+4. `docs/README.md` and active docs beneath `docs/` are the live reference set.
+5. `.archive/` is historical context only.
+
 ## 1) Core Rules
 
 - Prefer changing code over proposing code unless user asks for planning only.
@@ -59,6 +69,8 @@ Notes:
 - Markdown for architecture/planning/workflows.
 - Rustdoc for implementation/API details.
 - Check existing format before adding docs.
+- Prefer updating canonical docs instead of creating parallel summaries.
+- Archive completed or stale markdown under `.archive/` rather than leaving it in live doc paths.
 - Component specs: target 100–150 lines.
 - Test scenarios: align with existing scenario format in `docs/`.
 - Respect `.markdownlint.json`.
@@ -130,6 +142,8 @@ npx tsc --noEmit
 ## References
 
 - Technical source of truth: `README.md`
+- Docs index: `docs/README.md`
+- Current backlog: `TODO.md`
 - Architecture decisions: `docs/adr/`
 
 ### Charleston Flow Reference
@@ -164,4 +178,4 @@ npx tsc --noEmit
 \*\* Send 0 tiles to skip 2nd charleston
 \*\*\* Send 0 tiles to skip courtesy pass
 
-Last Updated: 2026-03-13
+Last Updated: 2026-04-19
